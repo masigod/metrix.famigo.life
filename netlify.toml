@@ -1,0 +1,41 @@
+# Netlify Configuration
+
+# Build settings
+[build]
+  publish = "."
+
+# Headers for security and CORS
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# CORS for Airtable API
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Authorization, Content-Type"
+
+# SPA fallback (optional - if you want all routes to go to index)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}
+  force = false
+
+# Redirect rules
+[[redirects]]
+  from = "/app"
+  to = "/reservation-tracker-airtable.html"
+  status = 301
+
+[[redirects]]
+  from = "/reservation"
+  to = "/reservation-tracker-airtable.html"
+  status = 301
