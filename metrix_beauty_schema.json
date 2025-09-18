@@ -1,0 +1,482 @@
+{
+  "tableName": "metrix_beauty",
+  "description": "Metrix Beauty Panel 예약 관리 테이블",
+  "primaryField": "Name",
+  "fields": [
+    {
+      "fieldName": "ID",
+      "type": "autonumber",
+      "description": "자동 증가 고유 번호",
+      "required": true,
+      "options": {
+        "prefix": "MX"
+      }
+    },
+    {
+      "fieldName": "Name",
+      "type": "singleLineText",
+      "description": "예약자 이름",
+      "required": true,
+      "validation": {
+        "maxLength": 100
+      }
+    },
+    {
+      "fieldName": "Email",
+      "type": "email",
+      "description": "이메일 주소 (고유 식별자)",
+      "required": true,
+      "unique": true
+    },
+    {
+      "fieldName": "Phone",
+      "type": "phoneNumber",
+      "description": "전화번호",
+      "required": true,
+      "format": "KR"
+    },
+    {
+      "fieldName": "Gender",
+      "type": "singleSelect",
+      "description": "성별",
+      "required": false,
+      "options": [
+        {"name": "남성", "color": "blue"},
+        {"name": "여성", "color": "pink"},
+        {"name": "기타", "color": "gray"},
+        {"name": "응답거부", "color": "lightGray"}
+      ]
+    },
+    {
+      "fieldName": "Birth_Date",
+      "type": "date",
+      "description": "생년월일",
+      "required": false,
+      "dateFormat": {
+        "format": "YYYY-MM-DD"
+      }
+    },
+    {
+      "fieldName": "Age_Group",
+      "type": "formula",
+      "description": "연령대 자동 계산",
+      "formula": "IF(Birth_Date, IF(DATETIME_DIFF(TODAY(), Birth_Date, 'years') < 20, '10대', IF(DATETIME_DIFF(TODAY(), Birth_Date, 'years') < 30, '20대', IF(DATETIME_DIFF(TODAY(), Birth_Date, 'years') < 40, '30대', IF(DATETIME_DIFF(TODAY(), Birth_Date, 'years') < 50, '40대', '50대 이상')))), '')"
+    },
+    {
+      "fieldName": "Nationality",
+      "type": "singleLineText",
+      "description": "국적",
+      "required": false,
+      "validation": {
+        "maxLength": 50
+      }
+    },
+    {
+      "fieldName": "Culture",
+      "type": "singleLineText",
+      "description": "문화권",
+      "required": false
+    },
+    {
+      "fieldName": "Race",
+      "type": "multipleSelects",
+      "description": "인종 (복수 선택 가능)",
+      "required": false,
+      "options": [
+        {"name": "Asian", "color": "yellow"},
+        {"name": "Caucasian", "color": "orange"},
+        {"name": "African", "color": "brown"},
+        {"name": "Hispanic", "color": "red"},
+        {"name": "Middle Eastern", "color": "purple"},
+        {"name": "Other", "color": "gray"}
+      ]
+    },
+    {
+      "fieldName": "Reservation_Date",
+      "type": "date",
+      "description": "예약 날짜",
+      "required": false,
+      "dateFormat": {
+        "format": "YYYY-MM-DD",
+        "includeTime": false
+      }
+    },
+    {
+      "fieldName": "Reservation_Time",
+      "type": "singleSelect",
+      "description": "예약 시간",
+      "required": false,
+      "options": [
+        {"name": "10:00", "color": "blue1"},
+        {"name": "10:30", "color": "blue2"},
+        {"name": "11:00", "color": "blue3"},
+        {"name": "11:30", "color": "cyan1"},
+        {"name": "12:00", "color": "cyan2"},
+        {"name": "12:30", "color": "cyan3"},
+        {"name": "13:00", "color": "teal1"},
+        {"name": "13:30", "color": "teal2"},
+        {"name": "14:00", "color": "green1"},
+        {"name": "14:30", "color": "green2"},
+        {"name": "15:00", "color": "green3"},
+        {"name": "15:30", "color": "yellow1"},
+        {"name": "16:00", "color": "yellow2"},
+        {"name": "16:30", "color": "yellow3"},
+        {"name": "17:00", "color": "orange1"},
+        {"name": "17:30", "color": "orange2"},
+        {"name": "18:00", "color": "red1"}
+      ]
+    },
+    {
+      "fieldName": "Location",
+      "type": "singleSelect",
+      "description": "예약 지점",
+      "required": false,
+      "options": [
+        {"name": "서울(Seoul)", "color": "blue"},
+        {"name": "수원(Suwon)", "color": "green"}
+      ]
+    },
+    {
+      "fieldName": "Status",
+      "type": "singleSelect",
+      "description": "예약 상태",
+      "required": true,
+      "default": "예약대기",
+      "options": [
+        {"name": "예약대기", "color": "yellow"},
+        {"name": "예약확정", "color": "blue"},
+        {"name": "신청완료", "color": "purple"},
+        {"name": "참여완료", "color": "green"},
+        {"name": "취소", "color": "red"},
+        {"name": "노쇼", "color": "gray"}
+      ]
+    },
+    {
+      "fieldName": "Participation_Result",
+      "type": "singleSelect",
+      "description": "참여 결과",
+      "required": false,
+      "options": [
+        {"name": "참여", "color": "green"},
+        {"name": "불참", "color": "red"},
+        {"name": "불가", "color": "gray"},
+        {"name": "중복", "color": "orange"},
+        {"name": "거부", "color": "red"},
+        {"name": "변경", "color": "blue"},
+        {"name": "보류", "color": "yellow"}
+      ]
+    },
+    {
+      "fieldName": "Group",
+      "type": "singleSelect",
+      "description": "그룹 구분",
+      "required": false,
+      "options": [
+        {"name": "PANEL1", "color": "blue1"},
+        {"name": "PANEL2", "color": "blue2"},
+        {"name": "PANEL3", "color": "blue3"},
+        {"name": "PANEL4", "color": "green1"},
+        {"name": "PANEL5", "color": "green2"}
+      ]
+    },
+    {
+      "fieldName": "Priority",
+      "type": "formula",
+      "description": "우선순위 자동 계산",
+      "formula": "IF(AND(Status = '예약대기', DATETIME_DIFF(TODAY(), Submission_Date, 'days') > 7), '🔴 높음', IF(AND(Status = '예약대기', DATETIME_DIFF(TODAY(), Submission_Date, 'days') > 3), '🟡 중간', '🟢 낮음'))"
+    },
+    {
+      "fieldName": "Days_Waiting",
+      "type": "formula",
+      "description": "대기 일수",
+      "formula": "IF(AND(Status = '예약대기', Submission_Date), DATETIME_DIFF(TODAY(), Submission_Date, 'days'), '')",
+      "resultType": "number"
+    },
+    {
+      "fieldName": "Submission_Date",
+      "type": "dateTime",
+      "description": "신청 제출 시간",
+      "required": false,
+      "dateFormat": {
+        "format": "YYYY-MM-DD",
+        "includeTime": true,
+        "timeFormat": "24hour",
+        "timeZone": "Asia/Seoul"
+      }
+    },
+    {
+      "fieldName": "Preferred_Dates",
+      "type": "longText",
+      "description": "희망 날짜 (복수)",
+      "required": false,
+      "enableRichText": false
+    },
+    {
+      "fieldName": "Preferred_Time",
+      "type": "singleLineText",
+      "description": "희망 시간대",
+      "required": false
+    },
+    {
+      "fieldName": "First_Response",
+      "type": "singleLineText",
+      "description": "최초 응대 담당자",
+      "required": false
+    },
+    {
+      "fieldName": "Last_Contact",
+      "type": "date",
+      "description": "마지막 연락 일자",
+      "required": false
+    },
+    {
+      "fieldName": "Contact_Count",
+      "type": "number",
+      "description": "연락 횟수",
+      "required": false,
+      "default": 0,
+      "validation": {
+        "min": 0,
+        "precision": 0
+      }
+    },
+    {
+      "fieldName": "Confirmation",
+      "type": "singleSelect",
+      "description": "확정 여부",
+      "required": false,
+      "options": [
+        {"name": "o", "color": "green"},
+        {"name": "x", "color": "red"}
+      ]
+    },
+    {
+      "fieldName": "Visa_Status",
+      "type": "singleLineText",
+      "description": "비자 상태",
+      "required": false
+    },
+    {
+      "fieldName": "Payment_Method",
+      "type": "singleSelect",
+      "description": "수령 방식",
+      "required": false,
+      "options": [
+        {"name": "현금", "color": "green"},
+        {"name": "계좌이체", "color": "blue"},
+        {"name": "상품권", "color": "purple"},
+        {"name": "기타", "color": "gray"}
+      ]
+    },
+    {
+      "fieldName": "Contact_Method",
+      "type": "multipleSelects",
+      "description": "선호 연락 방법",
+      "required": false,
+      "options": [
+        {"name": "전화", "color": "blue"},
+        {"name": "문자", "color": "green"},
+        {"name": "이메일", "color": "purple"},
+        {"name": "카카오톡", "color": "yellow"}
+      ]
+    },
+    {
+      "fieldName": "Contact_Info",
+      "type": "singleLineText",
+      "description": "추가 연락처 정보",
+      "required": false
+    },
+    {
+      "fieldName": "Referral_Code",
+      "type": "singleLineText",
+      "description": "추천인 코드",
+      "required": false
+    },
+    {
+      "fieldName": "Notes",
+      "type": "longText",
+      "description": "비고",
+      "required": false,
+      "enableRichText": true
+    },
+    {
+      "fieldName": "Additional_Notes",
+      "type": "longText",
+      "description": "첨언",
+      "required": false,
+      "enableRichText": true
+    },
+    {
+      "fieldName": "Tags",
+      "type": "multipleSelects",
+      "description": "태그",
+      "required": false,
+      "options": [
+        {"name": "VIP", "color": "gold"},
+        {"name": "재참여", "color": "blue"},
+        {"name": "신규", "color": "green"},
+        {"name": "주의", "color": "red"},
+        {"name": "우선처리", "color": "purple"}
+      ]
+    },
+    {
+      "fieldName": "Status_Emoji",
+      "type": "formula",
+      "description": "상태 이모지",
+      "formula": "SWITCH(Status, '예약대기', '⏳', '예약확정', '✅', '신청완료', '📝', '참여완료', '🎉', '취소', '❌', '노쇼', '👻', '❓')"
+    },
+    {
+      "fieldName": "Days_Until",
+      "type": "formula",
+      "description": "예약일까지 남은 일수",
+      "formula": "IF(AND(Reservation_Date, Status != '취소'), IF(DATETIME_DIFF(Reservation_Date, TODAY(), 'days') >= 0, DATETIME_DIFF(Reservation_Date, TODAY(), 'days') & '일 남음', '지남'), '')"
+    },
+    {
+      "fieldName": "Created_Time",
+      "type": "createdTime",
+      "description": "레코드 생성 시간",
+      "required": true
+    },
+    {
+      "fieldName": "Modified_Time",
+      "type": "lastModifiedTime",
+      "description": "마지막 수정 시간",
+      "required": true,
+      "includeAllFields": true
+    },
+    {
+      "fieldName": "Modified_By",
+      "type": "lastModifiedBy",
+      "description": "마지막 수정자",
+      "required": true
+    },
+    {
+      "fieldName": "Created_By",
+      "type": "createdBy",
+      "description": "레코드 생성자",
+      "required": true
+    },
+    {
+      "fieldName": "Sync_Status",
+      "type": "singleSelect",
+      "description": "동기화 상태",
+      "required": false,
+      "default": "synced",
+      "options": [
+        {"name": "synced", "color": "green"},
+        {"name": "pending", "color": "yellow"},
+        {"name": "error", "color": "red"}
+      ]
+    },
+    {
+      "fieldName": "Record_ID",
+      "type": "formula",
+      "description": "전체 레코드 ID",
+      "formula": "CONCATENATE('MX-', YEAR(Created_Time), '-', RECORD_ID())"
+    },
+    {
+      "fieldName": "Full_Info",
+      "type": "formula",
+      "description": "전체 정보 요약",
+      "formula": "CONCATENATE(Name, ' | ', Email, ' | ', Phone, ' | ', Status_Emoji, ' ', Status, IF(Reservation_Date, CONCATENATE(' | ', DATETIME_FORMAT(Reservation_Date, 'YYYY-MM-DD'), ' ', Reservation_Time), ''))"
+    }
+  ],
+  "views": [
+    {
+      "name": "All Records",
+      "type": "grid",
+      "description": "전체 레코드",
+      "fields": ["Name", "Email", "Phone", "Status", "Reservation_Date", "Reservation_Time", "Group"],
+      "sort": [
+        {"field": "Created_Time", "direction": "desc"}
+      ]
+    },
+    {
+      "name": "Today",
+      "type": "grid",
+      "description": "오늘 예약",
+      "filter": "AND(Reservation_Date = TODAY(), Status != '취소')",
+      "fields": ["Name", "Phone", "Reservation_Time", "Location", "Status"],
+      "sort": [
+        {"field": "Reservation_Time", "direction": "asc"}
+      ]
+    },
+    {
+      "name": "Pending",
+      "type": "grid",
+      "description": "예약 대기",
+      "filter": "Status = '예약대기'",
+      "fields": ["Name", "Email", "Phone", "Days_Waiting", "Priority", "Preferred_Dates"],
+      "sort": [
+        {"field": "Days_Waiting", "direction": "desc"}
+      ]
+    },
+    {
+      "name": "Panel5",
+      "type": "grid",
+      "description": "Panel5 그룹",
+      "filter": "OR(Group = 'PANEL5', Group = BLANK())",
+      "fields": ["Name", "Email", "Status", "Participation_Result", "Reservation_Date"],
+      "sort": [
+        {"field": "Status", "direction": "asc"},
+        {"field": "Name", "direction": "asc"}
+      ]
+    },
+    {
+      "name": "This Week",
+      "type": "calendar",
+      "description": "이번 주 예약",
+      "dateField": "Reservation_Date",
+      "fields": ["Name", "Phone", "Reservation_Time", "Location", "Status"]
+    },
+    {
+      "name": "Kanban",
+      "type": "kanban",
+      "description": "상태별 칸반 보드",
+      "groupBy": "Status",
+      "fields": ["Name", "Phone", "Reservation_Date", "Reservation_Time"],
+      "coverField": "Status_Emoji"
+    },
+    {
+      "name": "Statistics",
+      "type": "grid",
+      "description": "통계 뷰",
+      "summary": [
+        {"field": "Status", "function": "countall"},
+        {"field": "Group", "function": "countall"},
+        {"field": "Location", "function": "countall"}
+      ],
+      "groupBy": "Status"
+    }
+  ],
+  "automations": [
+    {
+      "name": "Auto Update Status",
+      "trigger": "record_updated",
+      "condition": "AND(Reservation_Date != BLANK(), Reservation_Time != BLANK(), Status = '예약대기')",
+      "action": "update_record",
+      "update": {"Status": "예약확정"}
+    },
+    {
+      "name": "Priority Alert",
+      "trigger": "time_based",
+      "schedule": "daily_9am",
+      "condition": "AND(Status = '예약대기', Days_Waiting > 7)",
+      "action": "send_notification",
+      "message": "7일 이상 대기 중인 예약이 있습니다."
+    }
+  ],
+  "permissions": {
+    "creator": "full",
+    "editor": ["create", "read", "update"],
+    "viewer": ["read"]
+  },
+  "apiScopes": [
+    "data.records:read",
+    "data.records:write",
+    "data.recordComments:read",
+    "data.recordComments:write",
+    "schema.bases:read",
+    "webhook:manage"
+  ]
+}

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airtable 연결 테스트</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .config-input {
+            margin: 10px 0;
+        }
+        .config-input label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .config-input input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Airtable 연결 테스트</h1>
+
+        <div class="warning">
+            ⚠️ <strong>보안 주의:</strong> API Key는 안전하게 보관하세요. 이 페이지는 테스트 용도입니다.
+        </div>
+
+        <div class="test-section">
+            <h2>1️⃣ 연결 설정</h2>
+
+            <div class="config-input">
+                <label for="apiKey">API Key (Personal Access Token):</label>
+                <input type="password" id="apiKey" placeholder="pat...">
+            </div>
+
+            <div class="config-input">
+                <label for="baseId">Base ID:</label>
+                <input type="text" id="baseId" placeholder="app...">
+            </div>
+
+            <div class="config-input">
+                <label for="tableName">Table Name:</label>
+                <input type="text" id="tableName" value="metrix_beauty">
+            </div>
+
+            <button onclick="testConnection()">🔌 연결 테스트</button>
+            <button onclick="saveConfig()">💾 설정 저장</button>
+            <button onclick="loadConfig()">📂 설정 불러오기</button>
+
+            <div id="connectionResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2️⃣ 데이터 테스트</h2>
+
+            <button onclick="fetchRecords()" disabled id="fetchBtn">📊 레코드 가져오기</button>
+            <button onclick="createTestRecord()" disabled id="createBtn">➕ 테스트 레코드 생성</button>
+            <button onclick="fetchStatistics()" disabled id="statsBtn">📈 통계 확인</button>
+
+            <div id="dataResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3️⃣ CSV 가져오기 테스트</h2>
+
+            <input type="file" id="csvFile" accept=".csv">
+            <button onclick="testCSVImport()" disabled id="importBtn">📤 CSV 테스트 (첫 5개만)</button>
+
+            <div id="importResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4️⃣ 연결 상태</h2>
+            <div id="statusInfo" class="info">
+                연결되지 않음
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let airtableConfig = {
+            apiKey: '',
+            baseId: '',
+            tableName: 'metrix_beauty'
+        };
+
+        let isConnected = false;
+
+        // 페이지 로드 시 저장된 설정 불러오기
+        window.onload = function() {
+            loadConfig();
+        };
+
+        // 설정 저장
+        function saveConfig() {
+            const apiKey = document.getElementById('apiKey').value;
+            const baseId = document.getElementById('baseId').value;
+            const tableName = document.getElementById('tableName').value;
+
+            if (!apiKey || !baseId || !tableName) {
+                alert('모든 필드를 입력하세요.');
+                return;
+            }
+
+            // LocalStorage에 저장 (실제로는 보안상 서버에 저장 권장)
+            localStorage.setItem('airtableConfig', JSON.stringify({
+                baseId: baseId,
+                tableName: tableName
+                // API Key는 보안상 저장하지 않음
+            }));
+
+            showResult('connectionResult', 'info', '설정이 저장되었습니다. (API Key는 저장되지 않음)');
+        }
+
+        // 설정 불러오기
+        function loadConfig() {
+            const saved = localStorage.getItem('airtableConfig');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('baseId').value = config.baseId || '';
+                document.getElementById('tableName').value = config.tableName || 'metrix_beauty';
+                showResult('connectionResult', 'info', '저장된 설정을 불러왔습니다. API Key를 입력하세요.');
+            }
+        }
+
+        // 연결 테스트
+        async function testConnection() {
+            const apiKey = document.getElementById('apiKey').value;
+            const baseId = document.getElementById('baseId').value;
+            const tableName = document.getElementById('tableName').value;
+
+            if (!apiKey || !baseId || !tableName) {
+                showResult('connectionResult', 'error', '모든 필드를 입력하세요.');
+                return;
+            }
+
+            airtableConfig = { apiKey, baseId, tableName };
+
+            showResult('connectionResult', 'info', '연결 테스트 중... <span class="loading"></span>');
+
+            try {
+                const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?maxRecords=1`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error?.message || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                isConnected = true;
+                enableButtons();
+
+                showResult('connectionResult', 'success',
+                    `✅ 연결 성공!<br>` +
+                    `Base ID: ${baseId}<br>` +
+                    `Table: ${tableName}<br>` +
+                    `테스트 레코드: ${data.records.length}개 확인`
+                );
+
+                updateStatus('연결됨', 'success');
+
+            } catch (error) {
+                isConnected = false;
+                disableButtons();
+
+                showResult('connectionResult', 'error',
+                    `❌ 연결 실패: ${error.message}<br>` +
+                    `<small>API Key, Base ID, Table Name을 확인하세요.</small>`
+                );
+
+                updateStatus('연결 실패', 'error');
+            }
+        }
+
+        // 레코드 가져오기
+        async function fetchRecords() {
+            showResult('dataResult', 'info', '데이터 가져오는 중... <span class="loading"></span>');
+
+            try {
+                const url = `https://api.airtable.com/v0/${airtableConfig.baseId}/${encodeURIComponent(airtableConfig.tableName)}?maxRecords=10&view=Grid%20view`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${airtableConfig.apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+
+                let html = `✅ ${data.records.length}개 레코드 확인<br><br>`;
+
+                data.records.forEach((record, i) => {
+                    html += `<strong>레코드 ${i + 1}:</strong><br>`;
+                    html += `ID: ${record.id}<br>`;
+                    html += `Name: ${record.fields.Name || '-'}<br>`;
+                    html += `Email: ${record.fields.Email || '-'}<br>`;
+                    html += `Status: ${record.fields.Status || '-'}<br>`;
+                    html += '<hr>';
+                });
+
+                showResult('dataResult', 'success', html);
+
+            } catch (error) {
+                showResult('dataResult', 'error', `❌ 데이터 가져오기 실패: ${error.message}`);
+            }
+        }
+
+        // 테스트 레코드 생성
+        async function createTestRecord() {
+            showResult('dataResult', 'info', '테스트 레코드 생성 중... <span class="loading"></span>');
+
+            const testData = {
+                fields: {
+                    Name: `테스트_${Date.now()}`,
+                    Email: `test_${Date.now()}@example.com`,
+                    Phone: '010-0000-0000',
+                    Status: '예약대기',
+                    Gender: '기타',
+                    Nationality: 'Test',
+                    Created_Time: new Date().toISOString(),
+                    Sync_Status: 'synced'
+                }
+            };
+
+            try {
+                const url = `https://api.airtable.com/v0/${airtableConfig.baseId}/${encodeURIComponent(airtableConfig.tableName)}`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${airtableConfig.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error?.message || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                showResult('dataResult', 'success',
+                    `✅ 테스트 레코드 생성 성공!<br>` +
+                    `ID: ${data.id}<br>` +
+                    `Name: ${data.fields.Name}<br>` +
+                    `Email: ${data.fields.Email}<br>` +
+                    `<small>Airtable에서 확인하세요.</small>`
+                );
+
+            } catch (error) {
+                showResult('dataResult', 'error', `❌ 레코드 생성 실패: ${error.message}`);
+            }
+        }
+
+        // 통계 확인
+        async function fetchStatistics() {
+            showResult('dataResult', 'info', '통계 계산 중... <span class="loading"></span>');
+
+            try {
+                const url = `https://api.airtable.com/v0/${airtableConfig.baseId}/${encodeURIComponent(airtableConfig.tableName)}?pageSize=100`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${airtableConfig.apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+
+                // 통계 계산
+                const stats = {
+                    total: data.records.length,
+                    byStatus: {},
+                    byGroup: {}
+                };
+
+                data.records.forEach(record => {
+                    const status = record.fields.Status || '미지정';
+                    const group = record.fields.Group || '미지정';
+
+                    stats.byStatus[status] = (stats.byStatus[status] || 0) + 1;
+                    stats.byGroup[group] = (stats.byGroup[group] || 0) + 1;
+                });
+
+                let html = `📊 <strong>통계 정보</strong><br><br>`;
+                html += `총 레코드: ${stats.total}개<br><br>`;
+
+                html += `<strong>상태별:</strong><br>`;
+                Object.entries(stats.byStatus).forEach(([status, count]) => {
+                    html += `• ${status}: ${count}개<br>`;
+                });
+
+                html += `<br><strong>그룹별:</strong><br>`;
+                Object.entries(stats.byGroup).forEach(([group, count]) => {
+                    html += `• ${group}: ${count}개<br>`;
+                });
+
+                showResult('dataResult', 'success', html);
+
+            } catch (error) {
+                showResult('dataResult', 'error', `❌ 통계 확인 실패: ${error.message}`);
+            }
+        }
+
+        // CSV 가져오기 테스트
+        async function testCSVImport() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files.length) {
+                showResult('importResult', 'error', 'CSV 파일을 선택하세요.');
+                return;
+            }
+
+            showResult('importResult', 'info', 'CSV 파일 처리 중... <span class="loading"></span>');
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function(e) {
+                try {
+                    // 간단한 CSV 파싱 (실제로는 PapaParse 사용 권장)
+                    const lines = e.target.result.split('\n');
+                    const headers = lines[0].split(',');
+
+                    // 첫 5개 레코드만 테스트
+                    const testRecords = [];
+                    for (let i = 1; i <= Math.min(5, lines.length - 1); i++) {
+                        const values = lines[i].split(',');
+                        const record = {};
+
+                        headers.forEach((header, index) => {
+                            const cleanHeader = header.replace(/^"|"$/g, '').trim();
+                            const cleanValue = (values[index] || '').replace(/^"|"$/g, '').trim();
+                            if (cleanValue) {
+                                record[cleanHeader] = cleanValue;
+                            }
+                        });
+
+                        if (record.Email) {
+                            testRecords.push({ fields: record });
+                        }
+                    }
+
+                    showResult('importResult', 'info',
+                        `📋 ${testRecords.length}개 테스트 레코드 준비됨<br>` +
+                        `<small>실제 가져오기는 reservation-tracker-airtable.html에서 수행하세요.</small>`
+                    );
+
+                    // 첫 번째 레코드 표시
+                    if (testRecords.length > 0) {
+                        const first = testRecords[0].fields;
+                        let html = '<br><strong>첫 번째 레코드 예시:</strong><pre>';
+                        html += JSON.stringify(first, null, 2);
+                        html += '</pre>';
+
+                        showResult('importResult', 'success',
+                            `✅ CSV 파일 읽기 성공!<br>` +
+                            html
+                        );
+                    }
+
+                } catch (error) {
+                    showResult('importResult', 'error', `❌ CSV 처리 실패: ${error.message}`);
+                }
+            };
+
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        // 버튼 활성화/비활성화
+        function enableButtons() {
+            document.getElementById('fetchBtn').disabled = false;
+            document.getElementById('createBtn').disabled = false;
+            document.getElementById('statsBtn').disabled = false;
+            document.getElementById('importBtn').disabled = false;
+        }
+
+        function disableButtons() {
+            document.getElementById('fetchBtn').disabled = true;
+            document.getElementById('createBtn').disabled = true;
+            document.getElementById('statsBtn').disabled = true;
+            document.getElementById('importBtn').disabled = true;
+        }
+
+        // 결과 표시
+        function showResult(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.className = `test-result ${type}`;
+            element.innerHTML = message;
+        }
+
+        // 상태 업데이트
+        function updateStatus(message, type) {
+            const element = document.getElementById('statusInfo');
+            element.className = type;
+            element.innerHTML = `<strong>현재 상태:</strong> ${message}<br>` +
+                               `<small>시간: ${new Date().toLocaleTimeString('ko-KR')}</small>`;
+        }
+    </script>
+</body>
+</html>

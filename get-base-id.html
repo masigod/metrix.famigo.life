@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Airtable Base ID 찾기</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+        }
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+        .highlight {
+            color: #66d9ef;
+            font-weight: bold;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .image-guide {
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+        }
+        .api-test {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔎 Airtable Base ID 찾기</h1>
+
+        <div class="step">
+            <h2>방법 1: URL에서 직접 확인</h2>
+            <ol>
+                <li>Airtable.com 로그인</li>
+                <li>"Metrix Beauty" Base 열기</li>
+                <li>브라우저 주소창 확인:</li>
+            </ol>
+            <div class="code">
+                https://airtable.com/<span class="highlight">appABC123xyz456789</span>/tblYYYYYY/viwZZZZZ
+            </div>
+            <p>👉 <span class="highlight">app</span>로 시작하는 부분이 Base ID입니다.</p>
+        </div>
+
+        <div class="step">
+            <h2>방법 2: API 문서에서 확인</h2>
+            <ol>
+                <li><a href="https://airtable.com/api" target="_blank">https://airtable.com/api</a> 접속</li>
+                <li>"Metrix Beauty" Base 클릭</li>
+                <li>문서 상단에 표시됨:</li>
+            </ol>
+            <div class="code">
+                The ID of this base is <span class="highlight">appXXXXXXXXXXXX</span>
+            </div>
+        </div>
+
+        <div class="api-test">
+            <h2>🧪 Base ID 테스트</h2>
+            <p>Base ID를 입력하면 유효한지 테스트합니다:</p>
+            <input type="text" id="baseIdInput" placeholder="app로 시작하는 Base ID 입력">
+            <button onclick="testBaseId()">Base ID 테스트</button>
+            <div id="result" class="result"></div>
+        </div>
+
+        <div class="step">
+            <h2>설정 파일 업데이트</h2>
+            <p>Base ID를 찾으면 아래 경로의 파일을 수정하세요:</p>
+            <div class="code">
+                /Users/owlers_dylan/Metrix/airtable-config-local.js
+                <br><br>
+                baseId: '<span id="baseIdDisplay">YOUR_BASE_ID_HERE</span>',  // ← 여기에 입력
+            </div>
+            <button onclick="copyConfig()">설정 코드 복사</button>
+        </div>
+
+        <div class="image-guide">
+            <h3>💡 예시</h3>
+            <p><strong>올바른 Base ID 형식:</strong></p>
+            <ul>
+                <li>✅ appABC123xyz456789</li>
+                <li>✅ app1234567890abcde</li>
+                <li>✅ appXxXxXxXxXxXxXx</li>
+            </ul>
+            <p><strong>잘못된 형식:</strong></p>
+            <ul>
+                <li>❌ Metrix Beauty (Base 이름)</li>
+                <li>❌ metrix_beauty (테이블 이름)</li>
+                <li>❌ tblXXXXXX (테이블 ID)</li>
+                <li>❌ viwXXXXXX (뷰 ID)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'YOUR_AIRTABLE_API_KEY'; // Replace with your actual API key
+        const TABLE_NAME = 'metrix_beauty';
+
+        async function testBaseId() {
+            const baseId = document.getElementById('baseIdInput').value.trim();
+            const resultDiv = document.getElementById('result');
+
+            if (!baseId) {
+                showResult('error', '❌ Base ID를 입력하세요.');
+                return;
+            }
+
+            if (!baseId.startsWith('app')) {
+                showResult('error', '❌ Base ID는 "app"으로 시작해야 합니다.');
+                return;
+            }
+
+            if (baseId.length < 14 || baseId.length > 20) {
+                showResult('error', '❌ Base ID 길이가 올바르지 않습니다. (보통 17자)');
+                return;
+            }
+
+            showResult('info', '🔄 테스트 중...');
+
+            try {
+                const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(TABLE_NAME)}?maxRecords=1`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('success',
+                        `✅ 유효한 Base ID입니다!<br>` +
+                        `Base ID: <strong>${baseId}</strong><br>` +
+                        `Table: ${TABLE_NAME}<br>` +
+                        `레코드 확인: ${data.records ? '성공' : '실패'}`
+                    );
+
+                    // Base ID 표시 업데이트
+                    document.getElementById('baseIdDisplay').textContent = baseId;
+                    document.getElementById('baseIdDisplay').style.color = '#28a745';
+
+                } else if (response.status === 404) {
+                    showResult('error',
+                        `❌ Base ID 또는 테이블을 찾을 수 없습니다.<br>` +
+                        `Base ID: ${baseId}<br>` +
+                        `Table Name: ${TABLE_NAME}<br>` +
+                        `Airtable에서 테이블 이름을 확인하세요.`
+                    );
+                } else if (response.status === 401) {
+                    showResult('error', '❌ API Key 인증 실패. 토큰을 확인하세요.');
+                } else {
+                    showResult('error', `❌ 오류 발생: HTTP ${response.status}`);
+                }
+
+            } catch (error) {
+                showResult('error', `❌ 연결 실패: ${error.message}`);
+            }
+        }
+
+        function showResult(type, message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type === 'success' ? 'success' : 'error'}`;
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
+        }
+
+        function copyConfig() {
+            const baseId = document.getElementById('baseIdDisplay').textContent;
+            const configText = `baseId: '${baseId}',`;
+
+            navigator.clipboard.writeText(configText).then(() => {
+                alert('설정 코드가 클립보드에 복사되었습니다!');
+            });
+        }
+
+        // Enter 키로 테스트
+        document.getElementById('baseIdInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                testBaseId();
+            }
+        });
+    </script>
+</body>
+</html>

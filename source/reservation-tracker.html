@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrix 예약 관리 시스템</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            background: white;
+            border-radius: 0;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .file-input-label:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        input[type="text"], input[type="date"], select {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+            background: white;
+            min-width: 200px;
+        }
+
+        input[type="text"]:focus, input[type="date"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
+        }
+
+        .btn-warning {
+            background: #f6ad55;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #ed8936;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(237, 137, 54, 0.4);
+        }
+
+        .btn-danger {
+            background: #fc8181;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #f56565;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 101, 101, 0.4);
+        }
+
+        .stats {
+            padding: 20px 30px;
+            background: white;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+
+        .stat-card.active {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border: 2px solid white;
+        }
+
+        .stat-card h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+            font-size: 1em;
+        }
+
+        .table-container {
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .editable {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .editable:hover {
+            background: #f0f0f0;
+        }
+
+        .editing-input {
+            padding: 4px 8px;
+            border: 2px solid #667eea;
+            border-radius: 4px;
+            font-size: 0.9em;
+            width: 120px;
+        }
+
+        .save-btn {
+            padding: 3px 8px;
+            background: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-left: 4px;
+        }
+
+        .save-btn:hover {
+            background: #38a169;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            position: sticky;
+            top: 0;
+            background: #f8f9fa;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+        tbody tr {
+            transition: all 0.3s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-waiting {
+            background: #fef5e7;
+            color: #8b6914;
+        }
+
+        .status-confirmed {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
+        .status-applied {
+            background: #e9d5ff;
+            color: #6b21a8;
+        }
+
+        .status-completed {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .status-cancelled {
+            background: #fed7d7;
+            color: #9b2c2c;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .edit-btn {
+            background: #4299e1;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #3182ce;
+        }
+
+        .confirm-btn {
+            background: #48bb78;
+            color: white;
+        }
+
+        .confirm-btn:hover {
+            background: #38a169;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .modal-header h2 {
+            color: #495057;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .filter-badge {
+            background: #e9ecef;
+            color: #495057;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-badge .remove {
+            cursor: pointer;
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .priority-high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .priority-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .priority-low {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                width: 100%;
+            }
+
+            input[type="text"], input[type="date"], select {
+                width: 100%;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Metrix 예약 관리 시스템</h1>
+            <p>예약 확정 및 일정 관리 도구</p>
+        </div>
+
+        <div id="filterStatus" style="display: none; background: #f0f8ff; padding: 10px 30px; border-bottom: 1px solid #ddd; text-align: center; color: #333;">
+            <span id="activeFilterText" style="font-weight: bold;"></span>
+            <button onclick="resetFilters()" style="margin-left: 15px; padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">필터 초기화</button>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>CSV 파일 업로드</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="csvFile" accept=".csv">
+                    <label for="csvFile" class="file-input-label">📁 파일 선택</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>상태 필터</label>
+                <select id="statusFilter">
+                    <option value="all">전체</option>
+                    <option value="waiting">예약대기</option>
+                    <option value="confirmed">예약확정</option>
+                    <option value="applied">신청완료</option>
+                    <option value="completed">참여완료</option>
+                    <option value="cancelled">취소</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>날짜 필터</label>
+                <input type="date" id="dateFilter">
+            </div>
+
+            <div class="control-group">
+                <label>검색</label>
+                <input type="text" id="searchInput" placeholder="이름, 이메일 검색...">
+            </div>
+
+            <div class="control-group" style="flex-direction: row; gap: 10px; align-items: flex-end;">
+                <button class="btn btn-primary" onclick="filterData()">
+                    🔍 필터 적용
+                </button>
+                <button class="btn btn-warning" onclick="resetFilters()">
+                    🔄 필터 초기화
+                </button>
+                <button class="btn btn-success" onclick="exportToExcel()">
+                    📥 Excel 다운로드
+                </button>
+                <button class="btn btn-primary" onclick="showPendingOnly()">
+                    ⚠️ 예약대기만 보기
+                </button>
+            </div>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-card" onclick="filterByStatus('all')" data-status="all">
+                <h3 id="totalCount">0</h3>
+                <p>전체 예약</p>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('waiting')" style="background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);" data-status="waiting">
+                <h3 id="waitingCount">0</h3>
+                <p>예약대기</p>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('confirmed')" style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);" data-status="confirmed">
+                <h3 id="confirmedCount">0</h3>
+                <p>예약확정</p>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('applied')" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);" data-status="applied">
+                <h3 id="appliedCount">0</h3>
+                <p>신청완료</p>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('completed')" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);" data-status="completed">
+                <h3 id="completedCount">0</h3>
+                <p>참여완료</p>
+            </div>
+            <div class="stat-card" onclick="filterByToday()" style="background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);" data-filter="today">
+                <h3 id="todayCount">0</h3>
+                <p>오뉘 예약</p>
+            </div>
+            <div class="stat-card" onclick="filterByWeek()" style="background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);" data-filter="week">
+                <h3 id="weekCount">0</h3>
+                <p>이번 주 예약</p>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>데이터 로딩 중...</p>
+            </div>
+            <table id="dataTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        </th>
+                        <th class="sortable" onclick="sortTable('priority')">우선순위</th>
+                        <th class="sortable" onclick="sortTable('index')">번호</th>
+                        <th class="sortable" onclick="sortTable('name')">이름</th>
+                        <th class="sortable" onclick="sortTable('email')">이메일</th>
+                        <th class="sortable" onclick="sortTable('phone')">전화번호</th>
+                        <th class="sortable" onclick="sortTable('nationality')">국적</th>
+                        <th>희망 날짜</th>
+                        <th class="sortable" onclick="sortTable('location')">예약 지점</th>
+                        <th class="sortable" onclick="sortTable('date')">예약 날짜</th>
+                        <th class="sortable" onclick="sortTable('time')">예약 시간</th>
+                        <th class="sortable" onclick="sortTable('status')">상태</th>
+                        <th>참여결과</th>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+
+            <div style="margin-top: 20px; text-align: center;" id="batchActions" style="display: none;">
+                <button class="btn btn-success" onclick="batchConfirm()">
+                    ✅ 선택항목 일괄 확정
+                </button>
+                <button class="btn btn-danger" onclick="batchCancel()">
+                    ❌ 선택항목 일괄 취소
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 예약 확정 모달 -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>예약 확정</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>고객명</label>
+                    <input type="text" id="modalName" readonly>
+                </div>
+                <div class="form-group">
+                    <label>이메일</label>
+                    <input type="text" id="modalEmail" readonly>
+                </div>
+                <div class="form-group">
+                    <label>전화번호</label>
+                    <input type="text" id="modalPhone" readonly>
+                </div>
+                <div class="form-group">
+                    <label>희망 날짜/시간</label>
+                    <input type="text" id="modalPreferred" readonly style="background: #f8f9fa;">
+                </div>
+                <div class="form-group">
+                    <label>예약 날짜 *</label>
+                    <input type="date" id="modalDate" required>
+                </div>
+                <div class="form-group">
+                    <label>예약 시간 *</label>
+                    <select id="modalTime" required>
+                        <option value="">시간 선택</option>
+                        <option value="10:00">10:00</option>
+                        <option value="10:30">10:30</option>
+                        <option value="11:00">11:00</option>
+                        <option value="11:30">11:30</option>
+                        <option value="12:00">12:00</option>
+                        <option value="12:30">12:30</option>
+                        <option value="13:00">13:00</option>
+                        <option value="13:30">13:30</option>
+                        <option value="14:00">14:00</option>
+                        <option value="14:30">14:30</option>
+                        <option value="15:00">15:00</option>
+                        <option value="15:30">15:30</option>
+                        <option value="16:00">16:00</option>
+                        <option value="16:30">16:30</option>
+                        <option value="17:00">17:00</option>
+                        <option value="17:30">17:30</option>
+                        <option value="18:00">18:00</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>예약 지점 *</label>
+                    <select id="modalLocation" required>
+                        <option value="">지점 선택</option>
+                        <option value="서울(Seoul)">서울(Seoul)</option>
+                        <option value="수원(Suwon)">수원(Suwon)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>메모</label>
+                    <textarea id="modalNote" rows="3" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px;" placeholder="추가 메모 입력"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="closeModal()">취소</button>
+                <button class="btn btn-success" onclick="saveReservation()">확정</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let currentEditIndex = -1;
+        let selectedItems = new Set();
+        let sortColumn = '';
+        let sortDirection = 'asc';
+        let activeFilter = '';
+
+        // CSV 파일 자동 로드
+        window.addEventListener('DOMContentLoaded', () => {
+            const localFile = 'Metrix_merged_final.csv';
+            loadCSVFromFile(localFile);
+        });
+
+        // CSV 파일 업로드 처리
+        document.getElementById('csvFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('dataTable').style.display = 'none';
+
+                Papa.parse(file, {
+                    header: true,
+                    encoding: 'UTF-8',
+                    complete: function(results) {
+                        processData(results.data);
+                    },
+                    error: function(error) {
+                        alert('파일 읽기 오류: ' + error.message);
+                        document.getElementById('loading').style.display = 'none';
+                    }
+                });
+            }
+        });
+
+        // 로컬 CSV 파일 로드
+        function loadCSVFromFile(filename) {
+            document.getElementById('loading').style.display = 'block';
+
+            // 실제 환경에서는 서버에서 파일을 가져오도록 수정
+            fetch(filename)
+                .then(response => response.text())
+                .then(csvText => {
+                    Papa.parse(csvText, {
+                        header: true,
+                        encoding: 'UTF-8',
+                        complete: function(results) {
+                            processData(results.data);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.log('로컬 파일 로드 실패, 파일 업로드를 사용해주세요.');
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
+
+        // 데이터 처리
+        function processData(data) {
+            allData = data.filter(row => row['아이디'] && row['작성자']).map((row, index) => {
+                // 상태 결정 - 업데이트된 로직 반영
+                let status = row['상태'] || 'waiting';
+
+                // 참여여부결과 필드 읽기
+                const participation = row['참여여부결과'] || '';
+
+                // 희망 날짜 추출
+                const preferredDates = row['25. When can you visit the site? Please select all available dates, and we will confirm your appointment. (Please choose maximum of 2)'] || '';
+                const preferredTime = row['26. Which time slot do you prefer?'] || '';
+
+                // 우선순위 결정 (예약대기 기준)
+                let priority = 'low';
+                if (status === 'waiting') {
+                    const daysSinceSubmission = calculateDaysSince(row['응답시간']);
+                    if (daysSinceSubmission > 7) {
+                        priority = 'high';
+                    } else if (daysSinceSubmission > 3) {
+                        priority = 'medium';
+                    }
+                }
+
+                return {
+                    index: index,
+                    name: row['작성자'] || row['1. What is your full name? (Please write exactly as shown in your ARC or passport)'] || '',
+                    email: row['아이디'] || '',
+                    phone: row['21-1, Please write your phone number.'] || '',
+                    nationality: row['회원정보국가'] || row['4. What is your nationality?'] || '',
+                    location: row['예약 지점'] || row['24. At which location would you like to join this event?'] || '',
+                    date: row['예약 날짜'] || '',
+                    time: row['예약시간'] || '',
+                    preferredDates: preferredDates,
+                    preferredTime: preferredTime,
+                    submissionDate: row['응답시간'] || '',
+                    status: status,
+                    priority: priority,
+                    participation: participation,
+                    originalRow: row
+                };
+            });
+
+            filteredData = [...allData];
+            updateDisplay();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dataTable').style.display = 'table';
+            document.getElementById('batchActions').style.display = 'block';
+        }
+
+        // 제출일로부터 경과일 계산
+        function calculateDaysSince(dateStr) {
+            if (!dateStr) return 0;
+            const submitDate = new Date(dateStr);
+            const today = new Date();
+            const diffTime = Math.abs(today - submitDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        // 화면 업데이트
+        function updateDisplay() {
+            updateStats();
+            updateTable();
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            const total = filteredData.length;
+            const waiting = filteredData.filter(d => d.status === 'waiting').length;
+            const confirmed = filteredData.filter(d => d.status === 'confirmed').length;
+            const applied = filteredData.filter(d => d.status === 'applied').length;
+            const completed = filteredData.filter(d => d.status === 'completed').length;
+
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            const todayReservations = filteredData.filter(d => {
+                if (d.date) {
+                    const resDate = formatDateForComparison(d.date);
+                    return resDate === todayStr;
+                }
+                return false;
+            }).length;
+
+            // 이번 주 예약 계산
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+
+            const weekReservations = filteredData.filter(d => {
+                if (d.date) {
+                    const resDate = new Date(formatDateForComparison(d.date));
+                    return resDate >= weekStart && resDate <= weekEnd;
+                }
+                return false;
+            }).length;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('waitingCount').textContent = waiting;
+            document.getElementById('confirmedCount').textContent = confirmed;
+            document.getElementById('appliedCount').textContent = applied;
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('todayCount').textContent = todayReservations;
+            document.getElementById('weekCount').textContent = weekReservations;
+        }
+
+        // 날짜 형식 변환
+        function formatDateForComparison(dateStr) {
+            if (!dateStr) return '';
+
+            // YYYY.MM.DD 형식 처리
+            if (dateStr.includes('.')) {
+                const parts = dateStr.split('.');
+                if (parts.length === 3) {
+                    return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                }
+            }
+
+            // DD/MM/YYYY 형식 처리
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+            }
+
+            // YYYY-MM-DD 형식은 그대로
+            return dateStr;
+        }
+
+        // 테이블 업데이트
+        function updateTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            // 우선순위 및 상태별 정렬
+            const sortedData = [...filteredData].sort((a, b) => {
+                // 예약대기 먼저
+                if (a.status === 'waiting' && b.status !== 'waiting') return -1;
+                if (a.status !== 'waiting' && b.status === 'waiting') return 1;
+
+                // 같은 상태면 우선순위로
+                const priorityOrder = { high: 0, medium: 1, low: 2 };
+                return priorityOrder[a.priority] - priorityOrder[b.priority];
+            });
+
+            sortedData.forEach((item, index) => {
+                const row = tbody.insertRow();
+                row.dataset.index = item.index;
+
+                const statusClass = `status-${item.status}`;
+                const statusText = {
+                    'waiting': '예약대기',
+                    'confirmed': '예약확정',
+                    'applied': '신청완료',
+                    'completed': '참여완료',
+                    'cancelled': '취소'
+                }[item.status] || '예약대기';
+
+                const priorityClass = `priority-${item.priority}`;
+                const priorityText = item.priority === 'high' ? '높음' :
+                                     item.priority === 'medium' ? '중간' : '낮음';
+
+                row.innerHTML = `
+                    <td>
+                        <input type="checkbox" onchange="toggleSelection(${item.index})"
+                               ${selectedItems.has(item.index) ? 'checked' : ''}>
+                    </td>
+                    <td>
+                        ${item.status === 'waiting' ?
+                            `<span class="status-badge ${priorityClass}">${priorityText}</span>` :
+                            '-'}
+                    </td>
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td>${item.email}</td>
+                    <td>${item.phone}</td>
+                    <td>${item.nationality}</td>
+                    <td style="font-size: 0.9em; color: #666;">
+                        ${item.preferredDates ? item.preferredDates.substring(0, 30) + '...' : '-'}
+                    </td>
+                    <td>${item.location || '-'}</td>
+                    <td class="editable" onclick="editDate(${item.index}, this)">
+                        <strong>${item.date || '클릭하여 입력'}</strong>
+                    </td>
+                    <td class="editable" onclick="editTime(${item.index}, this)">
+                        <strong>${item.time || '클릭하여 입력'}</strong>
+                    </td>
+                    <td>
+                        <select class="status-select" onchange="updateStatus(${item.index}, this.value)"
+                                style="padding: 5px; border-radius: 5px; border: 1px solid #ddd;">
+                            <option value="waiting" ${item.status === 'waiting' ? 'selected' : ''}>예약대기</option>
+                            <option value="confirmed" ${item.status === 'confirmed' ? 'selected' : ''}>예약확정</option>
+                            <option value="applied" ${item.status === 'applied' ? 'selected' : ''}>신청완료</option>
+                            <option value="completed" ${item.status === 'completed' ? 'selected' : ''}>참여완료</option>
+                            <option value="cancelled" ${item.status === 'cancelled' ? 'selected' : ''}>취소</option>
+                        </select>
+                    </td>
+                    <td>
+                        <span class="status-badge ${item.participation === '참여' ? 'status-completed' : ''}">
+                            ${item.participation || '-'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn edit-btn" onclick="openConfirmModal(${item.index})">상세</button>
+                        </div>
+                    </td>
+                `;
+            });
+        }
+
+        // 선택 토글
+        function toggleSelection(index) {
+            if (selectedItems.has(index)) {
+                selectedItems.delete(index);
+            } else {
+                selectedItems.add(index);
+            }
+        }
+
+        // 전체 선택 토글
+        function toggleSelectAll() {
+            const checkAll = document.getElementById('selectAll').checked;
+            if (checkAll) {
+                filteredData.forEach(item => selectedItems.add(item.index));
+            } else {
+                selectedItems.clear();
+            }
+            updateTable();
+        }
+
+        // 예약대기만 보기
+        function showPendingOnly() {
+            document.getElementById('statusFilter').value = 'waiting';
+            filterData();
+        }
+
+        // 인라인 날짜 편집
+        function editDate(index, element) {
+            const item = allData.find(d => d.index === index);
+            const currentDate = item.date || '';
+
+            element.innerHTML = `
+                <input type="date" class="editing-input" value="${formatDateForInput(currentDate)}"
+                       onblur="saveDate(${index}, this.value)"
+                       onkeypress="if(event.key==='Enter') this.blur()">
+            `;
+            element.querySelector('input').focus();
+        }
+
+        // 날짜 저장
+        function saveDate(index, value) {
+            const item = allData.find(d => d.index === index);
+            if (item) {
+                item.date = value;
+                item.originalRow['예약 날짜'] = value;
+                updateDisplay();
+                showNotification('날짜가 저장되었습니다.');
+            }
+        }
+
+        // 인라인 시간 편집
+        function editTime(index, element) {
+            const item = allData.find(d => d.index === index);
+            const currentTime = item.time || '';
+
+            element.innerHTML = `
+                <select class="editing-input" onblur="saveTime(${index}, this.value)"
+                        onchange="saveTime(${index}, this.value)">
+                    <option value="">시간 선택</option>
+                    <option value="10:00" ${currentTime === '10:00' ? 'selected' : ''}>10:00</option>
+                    <option value="10:30" ${currentTime === '10:30' ? 'selected' : ''}>10:30</option>
+                    <option value="11:00" ${currentTime === '11:00' ? 'selected' : ''}>11:00</option>
+                    <option value="11:30" ${currentTime === '11:30' ? 'selected' : ''}>11:30</option>
+                    <option value="12:00" ${currentTime === '12:00' ? 'selected' : ''}>12:00</option>
+                    <option value="12:30" ${currentTime === '12:30' ? 'selected' : ''}>12:30</option>
+                    <option value="13:00" ${currentTime === '13:00' ? 'selected' : ''}>13:00</option>
+                    <option value="13:30" ${currentTime === '13:30' ? 'selected' : ''}>13:30</option>
+                    <option value="14:00" ${currentTime === '14:00' ? 'selected' : ''}>14:00</option>
+                    <option value="14:30" ${currentTime === '14:30' ? 'selected' : ''}>14:30</option>
+                    <option value="15:00" ${currentTime === '15:00' ? 'selected' : ''}>15:00</option>
+                    <option value="15:30" ${currentTime === '15:30' ? 'selected' : ''}>15:30</option>
+                    <option value="16:00" ${currentTime === '16:00' ? 'selected' : ''}>16:00</option>
+                    <option value="16:30" ${currentTime === '16:30' ? 'selected' : ''}>16:30</option>
+                    <option value="17:00" ${currentTime === '17:00' ? 'selected' : ''}>17:00</option>
+                    <option value="17:30" ${currentTime === '17:30' ? 'selected' : ''}>17:30</option>
+                    <option value="18:00" ${currentTime === '18:00' ? 'selected' : ''}>18:00</option>
+                </select>
+            `;
+            element.querySelector('select').focus();
+        }
+
+        // 시간 저장
+        function saveTime(index, value) {
+            const item = allData.find(d => d.index === index);
+            if (item) {
+                item.time = value;
+                item.originalRow['예약시간'] = value;
+                updateDisplay();
+                showNotification('시간이 저장되었습니다.');
+            }
+        }
+
+        // 상태 업데이트
+        function updateStatus(index, value) {
+            const item = allData.find(d => d.index === index);
+            if (item) {
+                item.status = value;
+                item.originalRow['상태'] = value;
+
+                // 상태에 따른 확정 여부 업데이트
+                if (value === 'cancelled') {
+                    item.originalRow['확정 여부'] = 'x';
+                } else if (value === 'confirmed' || value === 'applied' || value === 'completed') {
+                    item.originalRow['확정 여부'] = 'o';
+                }
+
+                updateDisplay();
+                showNotification('상태가 변경되었습니다.');
+            }
+        }
+
+        // 필터 적용
+        function filterData() {
+            const status = document.getElementById('statusFilter').value;
+            const date = document.getElementById('dateFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredData = allData.filter(item => {
+                let matches = true;
+
+                // 상태 필터
+                if (status !== 'all' && item.status !== status) {
+                    matches = false;
+                }
+
+                // 날짜 필터
+                if (date && item.date) {
+                    const itemDate = formatDateForComparison(item.date);
+                    if (itemDate !== date) {
+                        matches = false;
+                    }
+                }
+
+                // 검색 필터
+                if (search) {
+                    const searchableText = `${item.name} ${item.email} ${item.phone}`.toLowerCase();
+                    if (!searchableText.includes(search)) {
+                        matches = false;
+                    }
+                }
+
+                return matches;
+            });
+
+            updateDisplay();
+        }
+
+        // 필터 초기화
+        function resetFilters() {
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('searchInput').value = '';
+            filteredData = [...allData];
+            updateDisplay();
+        }
+
+        // 예약 확정 모달 열기
+        function openConfirmModal(index) {
+            currentEditIndex = index;
+            const item = allData.find(d => d.index === index);
+
+            document.getElementById('modalName').value = item.name;
+            document.getElementById('modalEmail').value = item.email;
+            document.getElementById('modalPhone').value = item.phone;
+            document.getElementById('modalPreferred').value =
+                `날짜: ${item.preferredDates || '미지정'}\n시간: ${item.preferredTime || '미지정'}`;
+            document.getElementById('modalDate').value = formatDateForInput(item.date);
+            document.getElementById('modalTime').value = item.time || '';
+            document.getElementById('modalLocation').value = extractLocation(item.location);
+            document.getElementById('modalNote').value = '';
+
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        // 날짜를 input date 형식으로 변환
+        function formatDateForInput(dateStr) {
+            if (!dateStr) return '';
+            return formatDateForComparison(dateStr);
+        }
+
+        // 지점 추출
+        function extractLocation(locationStr) {
+            if (!locationStr) return '';
+            if (locationStr.includes('서울') || locationStr.includes('Seoul')) {
+                return '서울(Seoul)';
+            } else if (locationStr.includes('수원') || locationStr.includes('Suwon')) {
+                return '수원(Suwon)';
+            }
+            return locationStr;
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+            currentEditIndex = -1;
+        }
+
+        // 예약 저장
+        function saveReservation() {
+            const date = document.getElementById('modalDate').value;
+            const time = document.getElementById('modalTime').value;
+            const location = document.getElementById('modalLocation').value;
+            const note = document.getElementById('modalNote').value;
+
+            if (!date || !time || !location) {
+                alert('필수 항목(날짜, 시간, 지점)을 모두 입력해주세요.');
+                return;
+            }
+
+            const item = allData.find(d => d.index === currentEditIndex);
+            if (item) {
+                item.date = date;
+                item.time = time;
+                item.location = location;
+                // 상태는 사용자가 select에서 변경하도록 함
+                if (!item.status || item.status === 'waiting') {
+                    item.status = 'confirmed';
+                }
+                item.priority = 'low';
+
+                // 원본 데이터 업데이트
+                item.originalRow['예약 날짜'] = date;
+                item.originalRow['예약시간'] = time;
+                item.originalRow['예약 지점'] = location;
+                item.originalRow['확정 여부'] = 'o';
+                if (note) {
+                    item.originalRow['메모'] = note;
+                }
+            }
+
+            closeModal();
+            filterData();
+            showNotification('예약이 확정되었습니다.');
+        }
+
+        // 일괄 확정
+        function batchConfirm() {
+            if (selectedItems.size === 0) {
+                alert('확정할 항목을 선택해주세요.');
+                return;
+            }
+
+            const confirmCount = selectedItems.size;
+            if (!confirm(`${confirmCount}개 항목을 일괄 확정하시겠습니까?\n(개별 날짜/시간 설정이 필요합니다)`)) {
+                return;
+            }
+
+            // 여기에 일괄 처리 로직 추가
+            showNotification(`${confirmCount}개 항목 처리를 위한 일괄 편집 기능이 필요합니다.`);
+        }
+
+        // 일괄 취소
+        function batchCancel() {
+            if (selectedItems.size === 0) {
+                alert('취소할 항목을 선택해주세요.');
+                return;
+            }
+
+            if (!confirm(`${selectedItems.size}개 항목을 취소하시겠습니까?`)) {
+                return;
+            }
+
+            selectedItems.forEach(index => {
+                const item = allData.find(d => d.index === index);
+                if (item) {
+                    item.status = 'cancelled';
+                    item.originalRow['확정 여부'] = 'x';
+                }
+            });
+
+            selectedItems.clear();
+            filterData();
+            showNotification('선택한 항목이 취소되었습니다.');
+        }
+
+        // 알림 표시
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #48bb78;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                z-index: 2000;
+                animation: slideIn 0.3s;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Excel 내보내기
+        function exportToExcel() {
+            const exportData = filteredData.map((item, idx) => ({
+                '번호': idx + 1,
+                '우선순위': item.status === 'waiting' ?
+                    (item.priority === 'high' ? '높음' : item.priority === 'medium' ? '중간' : '낮음') : '',
+                '이름': item.name,
+                '이메일': item.email,
+                '전화번호': item.phone,
+                '국적': item.nationality,
+                '희망날짜': item.preferredDates || '',
+                '희망시간': item.preferredTime || '',
+                '예약 지점': item.location || '',
+                '예약 날짜': item.date || '',
+                '예약 시간': item.time || '',
+                '상태': {
+                    'waiting': '예약대기',
+                    'confirmed': '예약확정',
+                    'applied': '신청완료',
+                    'completed': '참여완료',
+                    'cancelled': '취소'
+                }[item.status] || '예약대기',
+                '제출일': item.submissionDate || '',
+                ...item.originalRow
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "예약데이터");
+
+            // 열 너비 자동 조정
+            const wscols = [
+                {wch: 5},  // 번호
+                {wch: 8},  // 우선순위
+                {wch: 15}, // 이름
+                {wch: 25}, // 이메일
+                {wch: 15}, // 전화번호
+                {wch: 15}, // 국적
+                {wch: 30}, // 희망날짜
+                {wch: 20}, // 희망시간
+                {wch: 20}, // 예약지점
+                {wch: 12}, // 예약날짜
+                {wch: 10}, // 예약시간
+                {wch: 8},  // 상태
+                {wch: 20}  // 제출일
+            ];
+            ws['!cols'] = wscols;
+
+            // 파일명에 현재 날짜 추가
+            const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+            const filename = `Metrix_예약관리_${today}.xlsx`;
+
+            XLSX.writeFile(wb, filename);
+            showNotification('Excel 파일이 다운로드되었습니다.');
+        }
+
+        // 상태별 필터
+        function filterByStatus(status) {
+            // 스탯 카드 활성화 표시
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.classList.remove('active');
+            });
+
+            const clickedCard = document.querySelector(`.stat-card[data-status="${status}"]`);
+            if (clickedCard) {
+                clickedCard.classList.add('active');
+            }
+
+            // 필터 적용
+            if (status === 'all') {
+                filteredData = [...allData];
+                activeFilter = '';
+                updateFilterStatus('전체 데이터');
+            } else {
+                filteredData = allData.filter(item => item.status === status);
+                activeFilter = status;
+                const statusText = {
+                    'waiting': '예약대기',
+                    'confirmed': '예약확정',
+                    'applied': '신청완료',
+                    'completed': '참여완료'
+                }[status];
+                updateFilterStatus(`${statusText} 상태만 표시`);
+            }
+
+            document.getElementById('statusFilter').value = status;
+            updateDisplay();
+        }
+
+        // 오늘 예약 필터
+        function filterByToday() {
+            const today = new Date().toISOString().split('T')[0];
+            filteredData = allData.filter(item => {
+                if (item.date) {
+                    const itemDate = formatDateForComparison(item.date);
+                    return itemDate === today;
+                }
+                return false;
+            });
+
+            activeFilter = 'today';
+            updateFilterStatus('오늘 예약만 표시');
+
+            // 스탯 카드 활성화
+            document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
+            document.querySelector('.stat-card[data-filter="today"]').classList.add('active');
+
+            updateDisplay();
+        }
+
+        // 이번 주 예약 필터
+        function filterByWeek() {
+            const today = new Date();
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+
+            filteredData = allData.filter(item => {
+                if (item.date) {
+                    const itemDate = new Date(formatDateForComparison(item.date));
+                    return itemDate >= weekStart && itemDate <= weekEnd;
+                }
+                return false;
+            });
+
+            activeFilter = 'week';
+            updateFilterStatus('이번 주 예약만 표시');
+
+            // 스탯 카드 활성화
+            document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
+            document.querySelector('.stat-card[data-filter="week"]').classList.add('active');
+
+            updateDisplay();
+        }
+
+        // 필터 상태 업데이트
+        function updateFilterStatus(text) {
+            const filterStatus = document.getElementById('filterStatus');
+            const filterText = document.getElementById('activeFilterText');
+
+            if (!filterStatus) return;
+
+            if (text === '전체 데이터') {
+                filterStatus.style.display = 'none';
+            } else {
+                filterStatus.style.display = 'block';
+                filterText.textContent = text;
+            }
+        }
+
+        // 정렬 초기화
+        function resetSort() {
+            sortColumn = '';
+            sortDirection = 'asc';
+
+            // 버튼 활성화 제거
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            updateDisplay();
+            showNotification('정렬이 초기화되었습니다.');
+        }
+
+        // 테이블 정렬 함수
+        function sortTable(column) {
+            // 정렬 방향 토글
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+
+            // 헤더 클래스 업데이트
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+            });
+
+            const clickedHeader = document.querySelector(`th.sortable[onclick*="'${column}'"]`);
+            if (clickedHeader) {
+                clickedHeader.classList.add(sortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            }
+
+            // 데이터 정렬
+            filteredData.sort((a, b) => {
+                let aValue = a[column];
+                let bValue = b[column];
+
+                // 우선순위 특별 처리
+                if (column === 'priority') {
+                    const priorityOrder = { high: 0, medium: 1, low: 2 };
+                    aValue = priorityOrder[aValue] ?? 3;
+                    bValue = priorityOrder[bValue] ?? 3;
+                }
+
+                // 상태 특별 처리
+                if (column === 'status') {
+                    const statusOrder = { waiting: 0, confirmed: 1, applied: 2, completed: 3, cancelled: 4 };
+                    aValue = statusOrder[aValue] ?? 5;
+                    bValue = statusOrder[bValue] ?? 5;
+                }
+
+                // null/undefined 처리
+                if (aValue == null || aValue === '') aValue = 'zzz';
+                if (bValue == null || bValue === '') bValue = 'zzz';
+
+                // 날짜 비교
+                if (column === 'date' && aValue !== 'zzz' && bValue !== 'zzz') {
+                    aValue = new Date(formatDateForComparison(aValue));
+                    bValue = new Date(formatDateForComparison(bValue));
+                }
+
+                // 숫자 비교
+                if (column === 'index') {
+                    aValue = parseInt(aValue) || 0;
+                    bValue = parseInt(bValue) || 0;
+                }
+
+                // 비교
+                if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            updateTable();
+        }
+
+        // 모달 외부 클릭시 닫기
+        window.onclick = function(event) {
+            const modal = document.getElementById('confirmModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+            // Ctrl+F: 미확정만 보기
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                showPendingOnly();
+            }
+            // Ctrl+E: Excel 내보내기
+            if (e.ctrlKey && e.key === 'e') {
+                e.preventDefault();
+                exportToExcel();
+            }
+        });
+    </script>
+</body>
+</html>

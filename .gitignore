@@ -1,0 +1,47 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# API Keys and Secrets
+*api_key*
+*secret*
+*token*
+config.js
+airtable-config-local.js
+
+# Test files with sensitive data
+quick-token-test.html
+test-permissions.html
+debug-airtable.html
+final-test.html
+test-airtable-live.html
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+
+# Build outputs
+dist/
+build/
+*.pyc
+
+# Temporary files
+*.tmp
+*.temp
+~*
