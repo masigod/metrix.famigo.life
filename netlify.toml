@@ -21,21 +21,17 @@
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
     Access-Control-Allow-Headers = "Authorization, Content-Type"
 
-# SPA fallback (optional - if you want all routes to go to index)
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  conditions = {Role = ["admin"]}
-  force = false
-
 # Redirect rules
 [[redirects]]
   from = "/app"
-  to = "/reservation-tracker-airtable.html"
+  to = "/reservation-tracker-airtable-production.html"
   status = 301
 
 [[redirects]]
   from = "/reservation"
-  to = "/reservation-tracker-airtable.html"
+  to = "/reservation-tracker-airtable-production.html"
   status = 301
+
+# Functions directory
+[functions]
+  directory = "netlify/functions"
