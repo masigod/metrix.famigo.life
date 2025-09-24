@@ -45,3 +45,10 @@ build/
 *.tmp
 *.temp
 ~*
+
+# Large data files (keep only templates)
+source/*.csv
+!source/Panel_Input_Template.csv
+
+# Python scripts (optional - remove this section if you want to track them)
+# *.py
