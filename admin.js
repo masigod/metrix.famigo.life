@@ -612,7 +612,10 @@ async function handleFormSubmit(e) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error('Airtable API error:', errorData);
-            throw new Error(errorData.error || 'Failed to save record');
+            if (errorData.details) {
+                console.error('Error details:', errorData.details);
+            }
+            throw new Error(errorData.error || errorData.message || 'Failed to save record');
         }
 
         closeEditModal();

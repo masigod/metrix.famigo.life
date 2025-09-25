@@ -94,6 +94,18 @@ exports.handler = async (event, context) => {
         const postResponse = await fetch(url, options);
         const postResult = await postResponse.json();
 
+        if (!postResponse.ok) {
+          console.error('Airtable API error:', postResult);
+          return {
+            statusCode: postResponse.status,
+            headers,
+            body: JSON.stringify({
+              error: postResult.error?.message || 'Failed to create record',
+              details: postResult.error
+            })
+          };
+        }
+
         return {
           statusCode: postResponse.status,
           headers,
@@ -127,6 +139,18 @@ exports.handler = async (event, context) => {
 
         const putResponse = await fetch(url, options);
         const putResult = await putResponse.json();
+
+        if (!putResponse.ok) {
+          console.error('Airtable API error:', putResult);
+          return {
+            statusCode: putResponse.status,
+            headers,
+            body: JSON.stringify({
+              error: putResult.error?.message || 'Failed to update record',
+              details: putResult.error
+            })
+          };
+        }
 
         return {
           statusCode: putResponse.status,
