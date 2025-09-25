@@ -235,6 +235,18 @@
     <!-- Main Content -->
     <main class="px-6 py-8 max-w-[1920px] mx-auto">
 
+        <!-- Filter Status Indicator -->
+        <div id="filterIndicator" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-filter text-blue-600"></i>
+                <span class="text-sm font-medium text-blue-800">Filter Applied</span>
+                <span id="filterDescription" class="text-sm text-blue-600"></span>
+            </div>
+            <button onclick="clearSearch()" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                Clear Filter <i class="fas fa-times ml-1"></i>
+            </button>
+        </div>
+
         <!-- Statistics Overview -->
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
             <div class="stat-card">
@@ -408,7 +420,13 @@
         <!-- Data Table -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-gray-900">Data Table</h2>
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900">Data Table</h2>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Showing <span id="filteredCount" class="font-medium text-gray-700">0</span> of
+                        <span id="totalDataCount" class="font-medium text-gray-700">0</span> records
+                    </p>
+                </div>
                 <div class="text-sm text-gray-500">
                     <span id="selectedCount">0</span> selected
                 </div>

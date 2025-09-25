@@ -192,10 +192,13 @@ async function loadAllData() {
     }
 }
 
-function updateAllStatistics() {
+function updateAllStatistics(useFilteredData = false) {
+    // Use filtered data for statistics when search is active
+    const dataToUse = useFilteredData ? filteredData : allData;
+
     // Calculate comprehensive statistics
     const stats = {
-        total: allData.length,
+        total: dataToUse.length,
         participated: 0,
         notParticipated: 0,
         pending: 0,
@@ -207,7 +210,7 @@ function updateAllStatistics() {
         locations: {}
     };
 
-    allData.forEach(record => {
+    dataToUse.forEach(record => {
         // Participation stats
         if (record.participation_result === '참여') stats.participated++;
         else if (record.participation_result === '불참') stats.notParticipated++;
@@ -417,6 +420,15 @@ function performSearch() {
         participation_result: document.getElementById('searchParticipation').value
     };
 
+    // Build filter description
+    const filterParts = [];
+    if (searchCriteria.name) filterParts.push(`Name: ${searchCriteria.name}`);
+    if (searchCriteria.phone) filterParts.push(`Phone: ${searchCriteria.phone}`);
+    if (searchCriteria.email) filterParts.push(`Email: ${searchCriteria.email}`);
+    if (searchCriteria.reservation_date) filterParts.push(`Date: ${searchCriteria.reservation_date}`);
+    if (searchCriteria.reservation_time) filterParts.push(`Time: ${searchCriteria.reservation_time}`);
+    if (searchCriteria.participation_result) filterParts.push(`Status: ${searchCriteria.participation_result}`);
+
     filteredData = allData.filter(record => {
         let match = true;
 
@@ -444,6 +456,19 @@ function performSearch() {
 
     table.setData(filteredData);
     updateRecordCount();
+    updateAllStatistics(true); // Update statistics with filtered data
+
+    // Show/hide filter indicator
+    const filterIndicator = document.getElementById('filterIndicator');
+    const filterDescription = document.getElementById('filterDescription');
+
+    if (filterParts.length > 0) {
+        filterIndicator.classList.remove('hidden');
+        filterDescription.textContent = `(${filterParts.join(', ')})`;
+    } else {
+        filterIndicator.classList.add('hidden');
+    }
+
     showToast(`Found ${filteredData.length} records`, 'info');
 }
 
@@ -458,6 +483,10 @@ function clearSearch() {
     filteredData = [...allData];
     table.setData(filteredData);
     updateRecordCount();
+    updateAllStatistics(false); // Reset to show all data statistics
+
+    // Hide filter indicator
+    document.getElementById('filterIndicator').classList.add('hidden');
 }
 
 function editRecord(record) {
@@ -687,6 +716,8 @@ async function handleFileImport(e) {
 
 function updateRecordCount() {
     document.getElementById('recordCount').textContent = `${filteredData.length} of ${allData.length} records`;
+    document.getElementById('filteredCount').textContent = filteredData.length;
+    document.getElementById('totalDataCount').textContent = allData.length;
 }
 
 function updateSelectedCount() {
