@@ -46,23 +46,39 @@ exports.handler = async (event, context) => {
 
     switch (event.httpMethod) {
       case 'GET':
-        // List all records
-        url += '?maxRecords=2000&view=Grid%20view';
+        // List all records with pagination
         options.method = 'GET';
+        let allRecords = [];
+        let offset = '';
 
-        const getResponse = await fetch(url, options);
-        const getData = await getResponse.json();
+        // Airtable returns max 100 records per request, need to paginate
+        do {
+          const paginatedUrl = offset
+            ? `${url}?pageSize=100&offset=${offset}&view=Grid%20view`
+            : `${url}?pageSize=100&view=Grid%20view`;
 
-        // Transform Airtable response to simplified format
-        const records = getData.records?.map(record => ({
-          id: record.id,
-          ...record.fields
-        })) || [];
+          const getResponse = await fetch(paginatedUrl, options);
+          const getData = await getResponse.json();
+
+          if (getData.records) {
+            allRecords = allRecords.concat(getData.records.map(record => ({
+              id: record.id,
+              ...record.fields
+            })));
+          }
+
+          // Airtable provides offset for next page if there are more records
+          offset = getData.offset || '';
+
+        } while (offset);
 
         return {
           statusCode: 200,
           headers,
-          body: JSON.stringify({ records })
+          body: JSON.stringify({
+            records: allRecords,
+            total: allRecords.length
+          })
         };
 
       case 'POST':
