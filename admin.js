@@ -340,7 +340,6 @@ function initializeCharts() {
                         font: { size: 10 }
                     }
                 }
-                }
             }
         }
     });
