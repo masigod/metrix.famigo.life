@@ -610,7 +610,9 @@ async function handleFormSubmit(e) {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to save record');
+            const errorData = await response.json();
+            console.error('Airtable API error:', errorData);
+            throw new Error(errorData.error || 'Failed to save record');
         }
 
         closeEditModal();
@@ -621,7 +623,7 @@ async function handleFormSubmit(e) {
         hideLoading();
     } catch (error) {
         console.error('Error saving record:', error);
-        showToast('Error saving record', 'error');
+        showToast(`Error: ${error.message}`, 'error');
         hideLoading();
     }
 }
