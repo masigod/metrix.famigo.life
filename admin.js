@@ -268,13 +268,13 @@ function initializeCharts() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        padding: 15,
-                        font: { size: 11 }
+                        padding: 10,
+                        font: { size: 10 }
                     }
                 }
             }
@@ -295,13 +295,13 @@ function initializeCharts() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        padding: 15,
-                        font: { size: 11 }
+                        padding: 10,
+                        font: { size: 10 }
                     }
                 }
             }
@@ -323,14 +323,23 @@ function initializeCharts() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { display: false }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: { stepSize: 1 }
+                    ticks: {
+                        stepSize: 1,
+                        font: { size: 10 }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: { size: 10 }
+                    }
+                }
                 }
             }
         }
