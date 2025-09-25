@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Beauty Panel Admin</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tabulator CSS & JS for data table -->
+    <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+
+    <!-- Papa Parse for CSV handling -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+    <!-- Toastify for notifications -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+
+        .tabulator {
+            font-size: 13px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tabulator .tabulator-header {
+            background: linear-gradient(to bottom, #ffffff, #f9fafb);
+            border-bottom: 2px solid #e5e7eb;
+            font-weight: 600;
+        }
+
+        .tabulator-col-title {
+            color: #374151;
+        }
+
+        .tabulator-row {
+            min-height: 42px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .tabulator-row:hover {
+            background-color: #f0f9ff !important;
+        }
+
+        .tabulator-row.tabulator-row-even {
+            background-color: #fafafa;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Stats cards */
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Buttons */
+        .btn {
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        K-Beauty Panel Admin
+                    </h1>
+                    <p class="text-sm text-gray-500 mt-1">Manage and analyze panel participant data</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p id="recordCount" class="text-sm font-medium text-gray-900"></p>
+                        <p id="lastSync" class="text-xs text-gray-500"></p>
+                    </div>
+                    <button id="refreshBtn" class="btn bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2">
+                        <i class="fas fa-sync-alt text-gray-500"></i>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+
+        <!-- Statistics Overview -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+            <div class="stat-card">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total</h3>
+                <p class="text-2xl font-bold text-gray-900" id="totalRecords">0</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Participated</h3>
+                <p class="text-2xl font-bold text-green-600" id="participatedCount">0</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Not Participated</h3>
+                <p class="text-2xl font-bold text-red-600" id="notParticipatedCount">0</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Pending</h3>
+                <p class="text-2xl font-bold text-yellow-600" id="pendingCount">0</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Matched</h3>
+                <p class="text-2xl font-bold text-blue-600" id="matchedCount">0</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Female</h3>
+                <p class="text-2xl font-bold text-purple-600" id="femaleCount">0</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Male</h3>
+                <p class="text-2xl font-bold text-indigo-600" id="maleCount">0</p>
+            </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Search & Filter</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+                <!-- Search inputs for key fields -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" id="searchName" placeholder="Search by name..."
+                           class="w-full px-3 py-2 bg-white rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">전화번호</label>
+                    <input type="text" id="searchPhone" placeholder="전화번호 검색..."
+                           class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">이메일</label>
+                    <input type="text" id="searchEmail" placeholder="이메일 검색..."
+                           class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">예약 날짜</label>
+                    <input type="date" id="searchDate"
+                           class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">예약 시간</label>
+                    <input type="time" id="searchTime"
+                           class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">참여 결과</label>
+                    <select id="searchParticipation"
+                            class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
+                        <option value="">전체</option>
+                        <option value="참여">참여</option>
+                        <option value="불참">불참</option>
+                        <option value="보류">보류</option>
+                        <option value="취소">취소</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <div class="flex space-x-2">
+                    <button id="searchBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition">
+                        <i class="fas fa-search"></i> 검색
+                    </button>
+                    <button id="clearBtn" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded transition">
+                        <i class="fas fa-times"></i> 초기화
+                    </button>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="flex space-x-2">
+                    <button id="addBtn" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded transition">
+                        <i class="fas fa-plus"></i> 신규 추가
+                    </button>
+                    <button id="exportBtn" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded transition">
+                        <i class="fas fa-download"></i> CSV 다운로드
+                    </button>
+                    <label for="importFile" class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded cursor-pointer transition">
+                        <i class="fas fa-upload"></i> CSV 업로드
+                    </label>
+                    <input type="file" id="importFile" accept=".csv" class="hidden">
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-gray-800 rounded-lg p-4">
+            <div id="dataTable"></div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h3 class="text-sm text-gray-400 mb-1">전체 레코드</h3>
+                <p class="text-2xl font-bold text-blue-400" id="totalRecords">0</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h3 class="text-sm text-gray-400 mb-1">참여</h3>
+                <p class="text-2xl font-bold text-green-400" id="participatedCount">0</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h3 class="text-sm text-gray-400 mb-1">불참</h3>
+                <p class="text-2xl font-bold text-red-400" id="notParticipatedCount">0</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h3 class="text-sm text-gray-400 mb-1">기타</h3>
+                <p class="text-2xl font-bold text-yellow-400" id="otherCount">0</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">레코드 편집</h2>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="editForm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Form fields will be dynamically generated -->
+                </div>
+                <div class="mt-6 flex justify-end space-x-2">
+                    <button type="button" onclick="closeEditModal()"
+                            class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded transition">
+                        취소
+                    </button>
+                    <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition">
+                        저장
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-[2000]">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

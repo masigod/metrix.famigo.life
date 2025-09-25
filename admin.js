@@ -1,41 +1,35 @@
-// Airtable Configuration from environment variables
-const AIRTABLE_CONFIG = {
-    baseId: null,
-    tableId: 'tbldYyFJUCL6O73eA',  // Fixed table ID as provided
-    apiKey: null
-};
-
 // Global variables
 let table = null;
 let allData = [];
 let filteredData = [];
+let charts = {};
 
 // Field definitions for the form
 const FIELD_DEFINITIONS = [
     { field: 'UID', title: 'UID', type: 'text', required: true, editable: true },
-    { field: 'name', title: '이름', type: 'text', required: true, editable: true },
-    { field: 'email', title: '이메일', type: 'email', required: true, editable: true },
-    { field: 'phone', title: '전화번호', type: 'tel', required: true, editable: true },
-    { field: 'gender', title: '성별', type: 'select', options: ['Female', 'Male'], editable: true },
-    { field: 'birth_year', title: '생년월일', type: 'date', editable: true },
-    { field: 'nationality', title: '국적', type: 'text', editable: true },
-    { field: 'culture_region', title: '문화권', type: 'text', editable: true },
-    { field: 'ethnicity', title: '인종', type: 'text', editable: true },
-    { field: 'visa_type', title: '비자 유형', type: 'text', editable: true },
-    { field: 'reservation_location', title: '예약 위치', type: 'select',
+    { field: 'name', title: 'Name', type: 'text', required: true, editable: true },
+    { field: 'email', title: 'Email', type: 'email', required: true, editable: true },
+    { field: 'phone', title: 'Phone', type: 'tel', required: true, editable: true },
+    { field: 'gender', title: 'Gender', type: 'select', options: ['Female', 'Male'], editable: true },
+    { field: 'birth_year', title: 'Birth Date', type: 'date', editable: true },
+    { field: 'nationality', title: 'Nationality', type: 'text', editable: true },
+    { field: 'culture_region', title: 'Culture Region', type: 'text', editable: true },
+    { field: 'ethnicity', title: 'Ethnicity', type: 'text', editable: true },
+    { field: 'visa_type', title: 'Visa Type', type: 'text', editable: true },
+    { field: 'reservation_location', title: 'Location', type: 'select',
       options: ['서울(Seoul)', '수원(Suwon)', 'cancel', '취소'], editable: true },
-    { field: 'reservation_date', title: '예약 날짜', type: 'date', editable: true },
-    { field: 'reservation_time', title: '예약 시간', type: 'time', editable: true },
-    { field: 'participation_result', title: '참여 결과', type: 'select',
+    { field: 'reservation_date', title: 'Reservation Date', type: 'date', editable: true },
+    { field: 'reservation_time', title: 'Reservation Time', type: 'time', editable: true },
+    { field: 'participation_result', title: 'Participation', type: 'select',
       options: ['참여', '불참', '보류', '취소'], editable: true },
-    { field: 'confirmation_status', title: '확정 여부', type: 'select',
+    { field: 'confirmation_status', title: 'Confirmation', type: 'select',
       options: ['o', 'x', 'pending'], editable: true },
-    { field: 'application_date', title: '신청일자', type: 'date', editable: true },
-    { field: 'famigo_match_key', title: 'Famigo 매칭키', type: 'text', editable: false },
-    { field: 'match_type', title: '매칭 타입', type: 'select',
+    { field: 'application_date', title: 'Application Date', type: 'date', editable: true },
+    { field: 'famigo_match_key', title: 'Famigo Key', type: 'text', editable: false },
+    { field: 'match_type', title: 'Match Type', type: 'select',
       options: ['완전매칭', '이메일매칭', '전화번호매칭', '미매칭'], editable: true },
-    { field: 'match_confidence', title: '매칭 신뢰도', type: 'number', editable: false },
-    { field: 'notes', title: '비고', type: 'textarea', editable: true }
+    { field: 'match_confidence', title: 'Match Confidence', type: 'number', editable: false },
+    { field: 'notes', title: 'Notes', type: 'textarea', editable: true }
 ];
 
 // Initialize on page load
@@ -47,54 +41,39 @@ async function initializeApp() {
     try {
         showLoading();
 
-        // Get environment variables from Netlify Functions
-        await getEnvironmentConfig();
-
         // Initialize Tabulator table
         initializeTable();
 
-        // Load data from Airtable
-        await loadData();
+        // Load data from Airtable - load ALL data
+        await loadAllData();
+
+        // Initialize charts
+        initializeCharts();
 
         // Set up event listeners
         setupEventListeners();
 
-        // Update stats
-        updateStats();
+        // Update all statistics and charts
+        updateAllStatistics();
 
         hideLoading();
     } catch (error) {
         console.error('Initialization error:', error);
-        showToast('초기화 중 오류가 발생했습니다', 'error');
+        showToast('Initialization error occurred', 'error');
         hideLoading();
-    }
-}
-
-async function getEnvironmentConfig() {
-    try {
-        const response = await fetch('/.netlify/functions/getConfig');
-        const config = await response.json();
-
-        AIRTABLE_CONFIG.baseId = config.baseId;
-        AIRTABLE_CONFIG.apiKey = config.apiKey;
-    } catch (error) {
-        console.error('Failed to get config:', error);
-        // Try to use localhost for development
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            console.log('Using development mode - manual config required');
-        }
     }
 }
 
 function initializeTable() {
     table = new Tabulator("#dataTable", {
         data: [],
-        layout: "fitDataFill",
-        height: "600px",
+        layout: "fitData",
+        height: "650px",
         virtualDom: true,
         movableColumns: true,
         resizableColumns: true,
         selectable: true,
+        pagination: false, // Show all data
         columns: [
             {
                 formatter: "rowSelection",
@@ -103,19 +82,22 @@ function initializeTable() {
                 headerSort: false,
                 cellClick: function(e, cell) {
                     cell.getRow().toggleSelect();
+                    updateSelectedCount();
                 }
             },
             {
-                title: "작업",
+                title: "Actions",
                 width: 100,
                 formatter: function(cell) {
                     return `
-                        <button class="edit-btn bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-xs mr-1">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="delete-btn bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <div class="flex gap-1">
+                            <button class="edit-btn text-blue-600 hover:text-blue-800 p-1">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="delete-btn text-red-600 hover:text-red-800 p-1">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     `;
                 },
                 cellClick: function(e, cell) {
@@ -129,38 +111,60 @@ function initializeTable() {
                 headerSort: false
             },
             { title: "UID", field: "UID", width: 200, headerFilter: "input" },
-            { title: "이름", field: "name", width: 150, headerFilter: "input" },
-            { title: "이메일", field: "email", width: 200, headerFilter: "input" },
-            { title: "전화번호", field: "phone", width: 130, headerFilter: "input" },
-            { title: "성별", field: "gender", width: 80, headerFilter: "select",
-              headerFilterParams: {values: {"": "전체", "Female": "Female", "Male": "Male"}} },
-            { title: "생년월일", field: "birth_year", width: 120 },
-            { title: "국적", field: "nationality", width: 100, headerFilter: "input" },
-            { title: "예약 위치", field: "reservation_location", width: 120, headerFilter: "input" },
-            { title: "예약 날짜", field: "reservation_date", width: 120, sorter: "date" },
-            { title: "예약 시간", field: "reservation_time", width: 100 },
-            { title: "참여 결과", field: "participation_result", width: 100,
-              headerFilter: "select", headerFilterParams: {values: {"": "전체", "참여": "참여", "불참": "불참", "보류": "보류", "취소": "취소"}},
+            { title: "Name", field: "name", width: 150, headerFilter: "input" },
+            { title: "Email", field: "email", width: 200, headerFilter: "input" },
+            { title: "Phone", field: "phone", width: 130, headerFilter: "input" },
+            { title: "Gender", field: "gender", width: 80, headerFilter: "select",
+              headerFilterParams: {values: {"": "All", "Female": "Female", "Male": "Male"}} },
+            { title: "Birth", field: "birth_year", width: 110 },
+            { title: "Nationality", field: "nationality", width: 120, headerFilter: "input" },
+            { title: "Location", field: "reservation_location", width: 120, headerFilter: "input" },
+            { title: "Date", field: "reservation_date", width: 110, sorter: "date" },
+            { title: "Time", field: "reservation_time", width: 80 },
+            { title: "Status", field: "participation_result", width: 100,
+              headerFilter: "select",
+              headerFilterParams: {values: {"": "All", "참여": "참여", "불참": "불참", "보류": "보류", "취소": "취소"}},
               formatter: function(cell) {
                   const value = cell.getValue();
-                  let color = "gray";
-                  if (value === "참여") color = "green";
-                  else if (value === "불참") color = "red";
-                  else if (value === "보류") color = "yellow";
-                  else if (value === "취소") color = "orange";
+                  let badgeClass = "badge-info";
 
-                  return `<span class="px-2 py-1 rounded text-xs bg-${color}-600">${value || '-'}</span>`;
+                  if (value === "참여") badgeClass = "badge-success";
+                  else if (value === "불참") badgeClass = "badge-danger";
+                  else if (value === "보류") badgeClass = "badge-warning";
+                  else if (value === "취소") badgeClass = "badge-danger";
+
+                  return value ? `<span class="badge ${badgeClass}">${value}</span>` : '-';
               }
             },
-            { title: "확정", field: "confirmation_status", width: 80 },
-            { title: "매칭 타입", field: "match_type", width: 120 },
-            { title: "신뢰도", field: "match_confidence", width: 80 },
-            { title: "비고", field: "notes", width: 200 }
+            { title: "Confirmed", field: "confirmation_status", width: 90,
+              formatter: function(cell) {
+                  const value = cell.getValue();
+                  if (value === 'o') return '<i class="fas fa-check text-green-600"></i>';
+                  if (value === 'x') return '<i class="fas fa-times text-red-600"></i>';
+                  return '<i class="fas fa-question text-gray-400"></i>';
+              }
+            },
+            { title: "Match", field: "match_type", width: 120,
+              formatter: function(cell) {
+                  const value = cell.getValue();
+                  if (!value || value === '미매칭') return '<span class="text-gray-400">Unmatched</span>';
+                  return `<span class="text-blue-600">${value}</span>`;
+              }
+            },
+            { title: "Score", field: "match_confidence", width: 70,
+              formatter: function(cell) {
+                  const value = cell.getValue();
+                  if (!value) return '-';
+                  const color = value >= 80 ? 'text-green-600' : value >= 50 ? 'text-yellow-600' : 'text-red-600';
+                  return `<span class="${color} font-semibold">${value}%</span>`;
+              }
+            },
+            { title: "Notes", field: "notes", width: 200 }
         ]
     });
 }
 
-async function loadData() {
+async function loadAllData() {
     try {
         const response = await fetch('/.netlify/functions/airtable', {
             method: 'GET'
@@ -172,17 +176,187 @@ async function loadData() {
 
         const data = await response.json();
         allData = data.records || [];
+
+        // Load ALL data without filtering
         filteredData = [...allData];
-
         table.setData(filteredData);
-        updateRecordCount();
-        updateStats();
 
-        document.getElementById('lastSync').textContent = `마지막 동기화: ${new Date().toLocaleString('ko-KR')}`;
+        console.log(`Loaded ${allData.length} records`);
+
+        updateRecordCount();
+        document.getElementById('lastSync').textContent = `Last sync: ${new Date().toLocaleString('en-US')}`;
+
     } catch (error) {
         console.error('Error loading data:', error);
-        showToast('데이터 로드 실패', 'error');
+        showToast('Failed to load data', 'error');
     }
+}
+
+function updateAllStatistics() {
+    // Calculate comprehensive statistics
+    const stats = {
+        total: allData.length,
+        participated: 0,
+        notParticipated: 0,
+        pending: 0,
+        cancelled: 0,
+        matched: 0,
+        unmatched: 0,
+        female: 0,
+        male: 0,
+        locations: {}
+    };
+
+    allData.forEach(record => {
+        // Participation stats
+        if (record.participation_result === '참여') stats.participated++;
+        else if (record.participation_result === '불참') stats.notParticipated++;
+        else if (record.participation_result === '보류') stats.pending++;
+        else if (record.participation_result === '취소') stats.cancelled++;
+
+        // Match stats
+        if (record.match_type && record.match_type !== '미매칭') stats.matched++;
+        else stats.unmatched++;
+
+        // Gender stats
+        if (record.gender === 'Female') stats.female++;
+        else if (record.gender === 'Male') stats.male++;
+
+        // Location stats
+        if (record.reservation_location) {
+            stats.locations[record.reservation_location] = (stats.locations[record.reservation_location] || 0) + 1;
+        }
+    });
+
+    // Update count displays
+    document.getElementById('totalRecords').textContent = stats.total;
+    document.getElementById('participatedCount').textContent = stats.participated;
+    document.getElementById('notParticipatedCount').textContent = stats.notParticipated;
+    document.getElementById('pendingCount').textContent = stats.pending;
+    document.getElementById('matchedCount').textContent = stats.matched;
+    document.getElementById('unmatchedCount').textContent = stats.unmatched;
+    document.getElementById('femaleCount').textContent = stats.female;
+    document.getElementById('maleCount').textContent = stats.male;
+
+    // Update percentages
+    if (stats.total > 0) {
+        document.getElementById('participatedPercent').textContent = `${((stats.participated/stats.total)*100).toFixed(1)}%`;
+        document.getElementById('notParticipatedPercent').textContent = `${((stats.notParticipated/stats.total)*100).toFixed(1)}%`;
+        document.getElementById('pendingPercent').textContent = `${((stats.pending/stats.total)*100).toFixed(1)}%`;
+        document.getElementById('matchedPercent').textContent = `${((stats.matched/stats.total)*100).toFixed(1)}%`;
+        document.getElementById('unmatchedPercent').textContent = `${((stats.unmatched/stats.total)*100).toFixed(1)}%`;
+        document.getElementById('femalePercent').textContent = `${((stats.female/stats.total)*100).toFixed(1)}%`;
+        document.getElementById('malePercent').textContent = `${((stats.male/stats.total)*100).toFixed(1)}%`;
+    }
+
+    // Update charts
+    updateCharts(stats);
+}
+
+function initializeCharts() {
+    // Participation Status Chart
+    const ctxParticipation = document.getElementById('participationChart').getContext('2d');
+    charts.participation = new Chart(ctxParticipation, {
+        type: 'doughnut',
+        data: {
+            labels: ['Participated', 'Not Participated', 'Pending', 'Cancelled'],
+            datasets: [{
+                data: [0, 0, 0, 0],
+                backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#6b7280'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: { size: 11 }
+                    }
+                }
+            }
+        }
+    });
+
+    // Gender Distribution Chart
+    const ctxGender = document.getElementById('genderChart').getContext('2d');
+    charts.gender = new Chart(ctxGender, {
+        type: 'pie',
+        data: {
+            labels: ['Female', 'Male'],
+            datasets: [{
+                data: [0, 0],
+                backgroundColor: ['#ec4899', '#3b82f6'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: { size: 11 }
+                    }
+                }
+            }
+        }
+    });
+
+    // Location Distribution Chart
+    const ctxLocation = document.getElementById('locationChart').getContext('2d');
+    charts.location = new Chart(ctxLocation, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Participants',
+                data: [],
+                backgroundColor: '#6366f1',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+}
+
+function updateCharts(stats) {
+    // Update Participation Chart
+    charts.participation.data.datasets[0].data = [
+        stats.participated,
+        stats.notParticipated,
+        stats.pending,
+        stats.cancelled
+    ];
+    charts.participation.update();
+
+    // Update Gender Chart
+    charts.gender.data.datasets[0].data = [stats.female, stats.male];
+    charts.gender.update();
+
+    // Update Location Chart
+    const locationLabels = Object.keys(stats.locations);
+    const locationData = Object.values(stats.locations);
+    charts.location.data.labels = locationLabels;
+    charts.location.data.datasets[0].data = locationData;
+    charts.location.update();
 }
 
 function setupEventListeners() {
@@ -195,9 +369,10 @@ function setupEventListeners() {
     // Refresh button
     document.getElementById('refreshBtn').addEventListener('click', async () => {
         showLoading();
-        await loadData();
+        await loadAllData();
+        updateAllStatistics();
         hideLoading();
-        showToast('데이터를 새로고침했습니다', 'success');
+        showToast('Data refreshed successfully', 'success');
     });
 
     // Add new record button
@@ -261,7 +436,7 @@ function performSearch() {
 
     table.setData(filteredData);
     updateRecordCount();
-    showToast(`${filteredData.length}개의 레코드를 찾았습니다`, 'info');
+    showToast(`Found ${filteredData.length} records`, 'info');
 }
 
 function clearSearch() {
@@ -293,7 +468,7 @@ function editRecord(record) {
         fieldDiv.className = fieldDef.type === 'textarea' ? 'md:col-span-2' : '';
 
         const label = document.createElement('label');
-        label.className = 'block text-sm text-gray-400 mb-1';
+        label.className = 'block text-sm font-medium text-gray-700 mb-1';
         label.textContent = fieldDef.title;
         if (fieldDef.required) {
             label.innerHTML += ' <span class="text-red-500">*</span>';
@@ -304,7 +479,7 @@ function editRecord(record) {
             input = document.createElement('select');
             const emptyOption = document.createElement('option');
             emptyOption.value = '';
-            emptyOption.textContent = '선택...';
+            emptyOption.textContent = 'Choose...';
             input.appendChild(emptyOption);
 
             fieldDef.options.forEach(option => {
@@ -323,7 +498,7 @@ function editRecord(record) {
 
         input.name = fieldDef.field;
         input.value = record[fieldDef.field] || '';
-        input.className = 'w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 focus:outline-none';
+        input.className = 'w-full px-3 py-2 bg-white rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition';
 
         if (fieldDef.required) {
             input.required = true;
@@ -331,7 +506,7 @@ function editRecord(record) {
 
         if (!fieldDef.editable && record.id) {
             input.disabled = true;
-            input.className += ' opacity-50 cursor-not-allowed';
+            input.className += ' bg-gray-100 cursor-not-allowed';
         }
 
         fieldDiv.appendChild(label);
@@ -352,15 +527,15 @@ function editRecord(record) {
 
     // Add buttons
     const buttonDiv = document.createElement('div');
-    buttonDiv.className = 'mt-6 flex justify-end space-x-2';
+    buttonDiv.className = 'mt-6 flex justify-end gap-3';
     buttonDiv.innerHTML = `
         <button type="button" onclick="closeEditModal()"
-                class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded transition">
-            취소
+                class="btn bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg">
+            Cancel
         </button>
         <button type="submit"
-                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition">
-            ${record.id ? '수정' : '추가'}
+                class="btn bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg">
+            ${record.id ? 'Update' : 'Create'}
         </button>
     `;
     form.appendChild(buttonDiv);
@@ -399,18 +574,19 @@ async function handleFormSubmit(e) {
         }
 
         closeEditModal();
-        await loadData();
-        showToast(record.id ? '레코드가 수정되었습니다' : '레코드가 추가되었습니다', 'success');
+        await loadAllData();
+        updateAllStatistics();
+        showToast(record.id ? 'Record updated successfully' : 'Record created successfully', 'success');
         hideLoading();
     } catch (error) {
         console.error('Error saving record:', error);
-        showToast('저장 중 오류가 발생했습니다', 'error');
+        showToast('Error saving record', 'error');
         hideLoading();
     }
 }
 
 async function deleteRecord(record) {
-    if (!confirm(`정말로 "${record.name}"님의 레코드를 삭제하시겠습니까?`)) {
+    if (!confirm(`Delete record for "${record.name}"?`)) {
         return;
     }
 
@@ -429,19 +605,20 @@ async function deleteRecord(record) {
             throw new Error('Failed to delete record');
         }
 
-        await loadData();
-        showToast('레코드가 삭제되었습니다', 'success');
+        await loadAllData();
+        updateAllStatistics();
+        showToast('Record deleted successfully', 'success');
         hideLoading();
     } catch (error) {
         console.error('Error deleting record:', error);
-        showToast('삭제 중 오류가 발생했습니다', 'error');
+        showToast('Error deleting record', 'error');
         hideLoading();
     }
 }
 
 function exportToCSV() {
     const csv = Papa.unparse(filteredData);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
 
@@ -453,7 +630,7 @@ function exportToCSV() {
     link.click();
     document.body.removeChild(link);
 
-    showToast('CSV 파일이 다운로드되었습니다', 'success');
+    showToast('CSV exported successfully', 'success');
 }
 
 async function handleFileImport(e) {
@@ -465,7 +642,7 @@ async function handleFileImport(e) {
         complete: async function(results) {
             const records = results.data.filter(row => row.UID); // Filter out empty rows
 
-            if (confirm(`${records.length}개의 레코드를 업로드하시겠습니까?`)) {
+            if (confirm(`Import ${records.length} records?`)) {
                 showLoading();
 
                 try {
@@ -481,11 +658,12 @@ async function handleFileImport(e) {
                         throw new Error('Failed to import records');
                     }
 
-                    await loadData();
-                    showToast(`${records.length}개의 레코드가 업로드되었습니다`, 'success');
+                    await loadAllData();
+                    updateAllStatistics();
+                    showToast(`${records.length} records imported successfully`, 'success');
                 } catch (error) {
                     console.error('Error importing records:', error);
-                    showToast('업로드 중 오류가 발생했습니다', 'error');
+                    showToast('Error importing records', 'error');
                 } finally {
                     hideLoading();
                     e.target.value = ''; // Reset file input
@@ -494,27 +672,18 @@ async function handleFileImport(e) {
         },
         error: function(error) {
             console.error('Error parsing CSV:', error);
-            showToast('CSV 파일 읽기 실패', 'error');
+            showToast('Error parsing CSV file', 'error');
         }
     });
 }
 
 function updateRecordCount() {
-    document.getElementById('recordCount').textContent = `${filteredData.length} / ${allData.length} 레코드`;
+    document.getElementById('recordCount').textContent = `${filteredData.length} of ${allData.length} records`;
 }
 
-function updateStats() {
-    const stats = {
-        total: allData.length,
-        participated: allData.filter(r => r.participation_result === '참여').length,
-        notParticipated: allData.filter(r => r.participation_result === '불참').length,
-        other: allData.filter(r => r.participation_result && r.participation_result !== '참여' && r.participation_result !== '불참').length
-    };
-
-    document.getElementById('totalRecords').textContent = stats.total;
-    document.getElementById('participatedCount').textContent = stats.participated;
-    document.getElementById('notParticipatedCount').textContent = stats.notParticipated;
-    document.getElementById('otherCount').textContent = stats.other;
+function updateSelectedCount() {
+    const selected = table.getSelectedRows().length;
+    document.getElementById('selectedCount').textContent = selected;
 }
 
 function showLoading() {
@@ -540,6 +709,9 @@ function showToast(message, type = 'info') {
         position: "right",
         style: {
             background: backgroundColor[type] || backgroundColor.info,
+            borderRadius: '8px',
+            fontSize: '14px',
+            padding: '12px 20px'
         }
     }).showToast();
 }
