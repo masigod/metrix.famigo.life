@@ -56,6 +56,9 @@ async function initializeApp() {
         // Update all statistics and charts
         updateAllStatistics();
 
+        // Initialize record count display
+        updateRecordCount();
+
         hideLoading();
     } catch (error) {
         console.error('Initialization error:', error);
@@ -613,6 +616,7 @@ async function handleFormSubmit(e) {
         closeEditModal();
         await loadAllData();
         updateAllStatistics();
+        updateRecordCount();
         showToast(record.id ? 'Record updated successfully' : 'Record created successfully', 'success');
         hideLoading();
     } catch (error) {
@@ -644,6 +648,7 @@ async function deleteRecord(record) {
 
         await loadAllData();
         updateAllStatistics();
+        updateRecordCount();
         showToast('Record deleted successfully', 'success');
         hideLoading();
     } catch (error) {
@@ -697,6 +702,7 @@ async function handleFileImport(e) {
 
                     await loadAllData();
                     updateAllStatistics();
+                    updateRecordCount();
                     showToast(`${records.length} records imported successfully`, 'success');
                 } catch (error) {
                     console.error('Error importing records:', error);
