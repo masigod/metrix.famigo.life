@@ -594,6 +594,14 @@ async function handleFormSubmit(e) {
     const record = {};
 
     for (let [key, value] of formData.entries()) {
+        // Handle empty date fields - don't send empty strings for date fields
+        if ((key.includes('date') || key.includes('Date')) && value === '') {
+            continue; // Skip empty date fields
+        }
+        // Handle empty number fields
+        if (value === '' && (key === 'age' || key === 'match_confidence')) {
+            continue; // Skip empty number fields
+        }
         record[key] = value;
     }
 
