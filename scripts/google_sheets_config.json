@@ -1,0 +1,22 @@
+{
+  "spreadsheet_id": "1qFgOUfID-6aB_yONfHNskNToMNn4xqU3lEQW8RaLhbY",
+  "sheets": {
+    "seoul": {
+      "name": "서울 관리",
+      "gid": "448929090",
+      "range": "A:Z"
+    },
+    "suwon": {
+      "name": "수원 관리",
+      "gid": "",
+      "range": "A:Z"
+    }
+  },
+  "cache_ttl_minutes": 15,
+  "auto_sync_interval_minutes": 30,
+  "export_format": "csv",
+  "rate_limits": {
+    "min_interval_seconds": 60,
+    "max_requests_per_hour": 30
+  }
+}

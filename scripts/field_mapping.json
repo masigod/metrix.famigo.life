@@ -1,0 +1,68 @@
+{
+  "korean_to_english": {
+    "UID": "uid",
+    "이름": "name",
+    "전화번호": "phone",
+    "이메일": "email",
+    "성별": "gender",
+    "생년월일": "birth_date",
+    "국적": "nationality",
+    "거주지역": "residence_area",
+    "예약 날짜": "reservation_date",
+    "시스템 예약 시간대": "reservation_time_slot",
+    "실제 예약 시간": "actual_reservation_time",
+    "예약 위치": "reservation_location",
+    "예약 상태": "reservation_status",
+    "참여 여부 결과": "participation_result",
+    "참여 날짜": "participation_date",
+    "참여 시간": "participation_time",
+    "확인 상태": "confirmation_status",
+    "참여 노트": "participation_notes",
+    "매칭 키": "matching_key",
+    "매칭 타입": "matching_type",
+    "매칭 신뢰도": "matching_confidence",
+    "데이터 소스": "data_source"
+  },
+  "value_mapping": {
+    "gender": {
+      "남": "Male",
+      "남성": "Male",
+      "Male": "Male",
+      "M": "Male",
+      "여": "Female",
+      "여성": "Female",
+      "Female": "Female",
+      "F": "Female"
+    },
+    "participation_result": {
+      "참여": "participated",
+      "참가": "participated",
+      "완료": "participated",
+      "O": "participated",
+      "o": "participated",
+      "불참": "not_participated",
+      "미참": "not_participated",
+      "X": "not_participated",
+      "x": "not_participated",
+      "보류": "pending",
+      "대기": "pending",
+      "미정": "pending",
+      "취소": "cancelled",
+      "철회": "cancelled"
+    },
+    "confirmation_status": {
+      "o": "confirmed",
+      "O": "confirmed",
+      "x": "not_confirmed",
+      "X": "not_confirmed",
+      "": "pending",
+      "대기": "pending"
+    },
+    "reservation_location": {
+      "서울": "Seoul",
+      "수원": "Suwon",
+      "Seoul": "Seoul",
+      "Suwon": "Suwon"
+    }
+  }
+}

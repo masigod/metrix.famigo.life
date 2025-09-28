@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Beauty Panel Admin - Filtered Data</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tabulator CSS & JS for data table -->
+    <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+
+    <!-- Papa Parse for CSV handling -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+    <!-- Toastify for notifications -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+
+        .tabulator {
+            font-size: 13px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .tabulator .tabulator-header {
+            background: linear-gradient(to bottom, #ffffff, #f9fafb);
+            border-bottom: 2px solid #e5e7eb;
+            font-weight: 600;
+        }
+
+        .tabulator-col-title {
+            color: #374151;
+            font-size: 12px;
+        }
+
+        .tabulator-row {
+            min-height: 40px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .tabulator-row:hover {
+            background-color: #fef3c7 !important;
+        }
+
+        .tabulator-row.tabulator-row-even {
+            background-color: #fafafa;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 32px;
+            border-radius: 16px;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #f59e0b;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Stats cards */
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.3s;
+            border: 1px solid #f3f4f6;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Buttons */
+        .btn {
+            transition: all 0.2s;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Badge styles */
+        .badge-yellow {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-amber-500 to-orange-500 shadow-lg">
+        <div class="px-6 py-5">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+                        <i class="fas fa-filter"></i>
+                        K-Beauty Panel Admin - Filtered Data
+                    </h1>
+                    <p class="text-amber-100 mt-1">Manage filtered panel participant data (불참/불가 제외)</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p id="recordCount" class="text-sm font-medium text-white"></p>
+                        <p id="lastSync" class="text-xs text-amber-100"></p>
+                    </div>
+                    <button id="refreshBtn" class="btn bg-white bg-opacity-20 backdrop-blur hover:bg-opacity-30 text-white px-5 py-2.5 rounded-lg border border-white border-opacity-30">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Refresh</span>
+                    </button>
+                    <a href="admin.html" class="btn bg-white text-amber-600 hover:bg-amber-50 px-5 py-2.5 rounded-lg">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Original Data</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="px-6 py-8 max-w-[1920px] mx-auto">
+
+        <!-- Filter Status Indicator -->
+        <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
+            <i class="fas fa-info-circle text-amber-600 text-xl"></i>
+            <div>
+                <p class="text-sm font-semibold text-amber-800">Filtered Dataset</p>
+                <p class="text-sm text-amber-600">This view excludes: 취소, 중복, 탈락, 거부, x, X, 불가, 불참</p>
+            </div>
+        </div>
+
+        <!-- Filter Status Indicator (Dynamic) -->
+        <div id="filterIndicator" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-filter text-blue-600"></i>
+                <span class="text-sm font-medium text-blue-800">Additional Filter Applied</span>
+                <span id="filterDescription" class="text-sm text-blue-600"></span>
+            </div>
+            <button onclick="clearSearch()" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                Clear Filter <i class="fas fa-times ml-1"></i>
+            </button>
+        </div>
+
+        <!-- Statistics Overview -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <i class="fas fa-users text-amber-500"></i>
+                    <span class="text-xs text-gray-500">100%</span>
+                </div>
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total</h3>
+                <p class="text-2xl font-bold text-gray-900" id="totalRecords">0</p>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <i class="fas fa-check-circle text-green-500"></i>
+                    <span class="text-xs text-gray-500" id="participatedPercent">0%</span>
+                </div>
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Participated</h3>
+                <p class="text-2xl font-bold text-green-600" id="participatedCount">0</p>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <i class="fas fa-clock text-yellow-500"></i>
+                    <span class="text-xs text-gray-500" id="pendingPercent">0%</span>
+                </div>
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Pending</h3>
+                <p class="text-2xl font-bold text-yellow-600" id="pendingCount">0</p>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <i class="fas fa-question-circle text-gray-500"></i>
+                    <span class="text-xs text-gray-500" id="otherPercent">0%</span>
+                </div>
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Other</h3>
+                <p class="text-2xl font-bold text-gray-600" id="otherCount">0</p>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <i class="fas fa-check text-orange-500"></i>
+                    <span class="text-xs text-gray-500" id="confirmedPercent">0%</span>
+                </div>
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Confirmed</h3>
+                <p class="text-2xl font-bold text-orange-600" id="confirmedCount">0</p>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <i class="fas fa-map-marker-alt text-blue-500"></i>
+                    <span class="text-xs text-gray-500" id="seoulPercent">0%</span>
+                </div>
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Seoul</h3>
+                <p class="text-2xl font-bold text-blue-600" id="seoulCount">0</p>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <i class="fas fa-map-marker-alt text-indigo-500"></i>
+                    <span class="text-xs text-gray-500" id="suwonPercent">0%</span>
+                </div>
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Suwon</h3>
+                <p class="text-2xl font-bold text-indigo-600" id="suwonCount">0</p>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-2">
+                    <i class="fas fa-venus-mars text-purple-500"></i>
+                    <span class="text-xs text-gray-500">Gender</span>
+                </div>
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">F/M Ratio</h3>
+                <p class="text-lg font-bold text-purple-600" id="genderRatio">0/0</p>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <h3 class="text-base font-semibold text-gray-900 mb-3">Participation Status</h3>
+                <div style="height: 200px; position: relative;">
+                    <canvas id="participationChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <h3 class="text-base font-semibold text-gray-900 mb-3">Gender Distribution</h3>
+                <div style="height: 200px; position: relative;">
+                    <canvas id="genderChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <h3 class="text-base font-semibold text-gray-900 mb-3">Location Distribution</h3>
+                <div style="height: 200px; position: relative;">
+                    <canvas id="locationChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Search & Filter</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" id="searchName" placeholder="Search by name..."
+                           class="w-full px-3 py-2 bg-white rounded-lg border border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="text" id="searchEmail" placeholder="Search by email..."
+                           class="w-full px-3 py-2 bg-white rounded-lg border border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input type="text" id="searchPhone" placeholder="Search by phone..."
+                           class="w-full px-3 py-2 bg-white rounded-lg border border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <select id="searchLocation"
+                            class="w-full px-3 py-2 bg-white rounded-lg border border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition">
+                        <option value="">All Locations</option>
+                        <option value="서울">서울(Seoul)</option>
+                        <option value="수원">수원(Suwon)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" id="searchDate"
+                           class="w-full px-3 py-2 bg-white rounded-lg border border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select id="searchParticipation"
+                            class="w-full px-3 py-2 bg-white rounded-lg border border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition">
+                        <option value="">All Status</option>
+                        <option value="참여">Participated</option>
+                        <option value="보류">Pending</option>
+                        <option value="거부">Rejected</option>
+                        <option value="변경">Changed</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <div class="flex gap-2">
+                    <button id="searchBtn" class="btn bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-lg">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                    </button>
+                    <button id="clearBtn" class="btn bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg">
+                        <i class="fas fa-times"></i>
+                        <span>Clear</span>
+                    </button>
+                </div>
+
+                <div class="flex gap-2">
+                    <button id="addBtn" class="btn bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg">
+                        <i class="fas fa-plus"></i>
+                        <span>Add New</span>
+                    </button>
+                    <button id="exportBtn" class="btn bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg">
+                        <i class="fas fa-download"></i>
+                        <span>Export CSV</span>
+                    </button>
+                    <label for="importFile" class="btn bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg cursor-pointer">
+                        <i class="fas fa-upload"></i>
+                        <span>Import CSV</span>
+                    </label>
+                    <input type="file" id="importFile" accept=".csv" class="hidden">
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900">Data Table</h2>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Showing <span id="filteredCount" class="font-medium text-gray-700">0</span> of
+                        <span id="totalDataCount" class="font-medium text-gray-700">0</span> records
+                    </p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-sm text-gray-500">
+                        <span id="selectedCount">0</span> selected
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-medium badge-yellow">
+                        Filtered Dataset
+                    </span>
+                </div>
+            </div>
+            <div id="dataTable"></div>
+        </div>
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Edit Record</h2>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="editForm">
+                <!-- Form fields will be dynamically generated -->
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center hidden z-[2000]">
+        <div class="bg-white rounded-lg p-6 flex flex-col items-center">
+            <div class="spinner mb-4"></div>
+            <p class="text-gray-600">Loading filtered data...</p>
+        </div>
+    </div>
+
+    <script src="admin_filter.js"></script>
+</body>
+</html>

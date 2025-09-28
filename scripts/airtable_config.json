@@ -1,0 +1,30 @@
+{
+  "api_key": "YOUR_API_KEY_HERE",
+  "base_id": "YOUR_BASE_ID_HERE",
+  "table_name": "ManagementPanel",
+  "sync_fields": [
+    "uid",
+    "name",
+    "email",
+    "phone",
+    "gender",
+    "birth_date",
+    "nationality",
+    "residence_area",
+    "reservation_date",
+    "reservation_time_slot",
+    "actual_reservation_time",
+    "reservation_location",
+    "reservation_status",
+    "participation_result",
+    "participation_date",
+    "participation_time",
+    "confirmation_status",
+    "participation_notes",
+    "matching_key",
+    "matching_type",
+    "matching_confidence",
+    "data_source",
+    "sync_timestamp"
+  ]
+}
