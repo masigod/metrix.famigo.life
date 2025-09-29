@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airtable Direct Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .container {
+            background: #252526;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: #3c3c3c;
+            color: #d4d4d4;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        .result {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            margin-top: 20px;
+            border: 1px solid #444;
+            font-size: 12px;
+        }
+        .success { border-color: #4CAF50; }
+        .error { border-color: #f44336; }
+        .warning { border-color: #ff9800; }
+        h2 { color: #4EC9B0; }
+        .important {
+            background: #3c3c3c;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Airtable Direct API Test</h1>
+
+    <div class="container">
+        <h2>⚙️ Airtable 설정 (Netlify 환경변수와 동일하게 입력)</h2>
+
+        <label>API Key (pat.로 시작):</label>
+        <input type="password" id="apiKey" placeholder="pat.xxxxx..." />
+
+        <label>Base ID (app로 시작):</label>
+        <input type="text" id="baseId" placeholder="appXXXXXXXXXXXX" />
+
+        <label>Table Name:</label>
+        <input type="text" id="tableName" value="SystemCredentials" />
+
+        <div class="important">
+            ⚠️ 이 정보는 Netlify 환경변수와 정확히 일치해야 합니다:
+            <br>• Airtable_API_Key
+            <br>• Airtable_Base_ID
+            <br>• Airtable_SystemCredentials_ID
+        </div>
+
+        <button onclick="testDirectConnection()">1. Test Direct Connection</button>
+        <button onclick="listTables()">2. List All Tables</button>
+        <button onclick="getTableSchema()">3. Get Table Schema</button>
+    </div>
+
+    <div class="container">
+        <h2>📝 테스트 레코드 생성</h2>
+
+        <label>Field Data (JSON):</label>
+        <textarea id="fieldData" rows="15">{
+  "service_name": "Google",
+  "credential_type": "USERNAME_PASSWORD",
+  "username": "help@owelers.co.kr",
+  "password": "U2FsdGVkX1+encrypted_password_here",
+  "environment": "Production",
+  "is_active": true,
+  "notes": "Direct API test",
+  "created_by": "admin@company.com",
+  "additional_config": "{\"spreadsheet_id\": \"1qFgOUfID-6aB_yONfHNskNToMNn4xqU3lEQW8RaLhbY\"}"
+}</textarea>
+
+        <button onclick="createDirectRecord()">Create Record Directly</button>
+    </div>
+
+    <div class="container">
+        <h2>📊 결과</h2>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        // Helper function to make Airtable API calls
+        async function callAirtableAPI(endpoint, method = 'GET', body = null) {
+            const apiKey = document.getElementById('apiKey').value;
+            const baseId = document.getElementById('baseId').value;
+
+            if (!apiKey || !baseId) {
+                throw new Error('API Key and Base ID are required');
+            }
+
+            const options = {
+                method: method,
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            const url = `https://api.airtable.com/v0/${baseId}${endpoint}`;
+            console.log('Request:', { url, ...options });
+
+            const response = await fetch(url, options);
+            const data = await response.json();
+
+            console.log('Response:', { status: response.status, data });
+
+            return { response, data };
+        }
+
+        // Test direct connection
+        async function testDirectConnection() {
+            const resultDiv = document.getElementById('result');
+            const tableName = document.getElementById('tableName').value;
+
+            resultDiv.textContent = 'Testing connection...';
+
+            try {
+                const { response, data } = await callAirtableAPI(`/${encodeURIComponent(tableName)}?maxRecords=1`);
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<strong>✅ Connection Successful!</strong>
+
+Table: ${tableName}
+Status: ${response.status}
+
+Response:
+${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>❌ Connection Failed!</strong>
+
+Status: ${response.status}
+
+Error:
+${JSON.stringify(data, null, 2)}
+
+Possible issues:
+1. API Key가 잘못됨 (pat.로 시작하는지 확인)
+2. Base ID가 잘못됨 (app로 시작하는지 확인)
+3. Table Name이 존재하지 않음
+4. API Key에 권한이 없음`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ Error!</strong>
+
+${error.message}
+
+Check:
+- API Key와 Base ID를 입력했는지 확인
+- 네트워크 연결 확인
+- Browser Console에서 CORS 에러 확인`;
+            }
+        }
+
+        // List all tables in the base
+        async function listTables() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Fetching tables...';
+
+            try {
+                const { response, data } = await callAirtableAPI('/tables');
+
+                if (response.ok) {
+                    const tableList = data.tables.map(t => `• ${t.name} (${t.id})`).join('\n');
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<strong>✅ Tables in this Base:</strong>
+
+${tableList}
+
+Raw Response:
+${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result warning';
+                    resultDiv.innerHTML = `<strong>⚠️ Could not list tables</strong>
+
+This endpoint might not be available for your API key.
+Try using the table name directly.
+
+Status: ${response.status}
+${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ Error!</strong>\n\n${error.message}`;
+            }
+        }
+
+        // Get table schema
+        async function getTableSchema() {
+            const resultDiv = document.getElementById('result');
+            const tableName = document.getElementById('tableName').value;
+
+            resultDiv.textContent = 'Fetching schema...';
+
+            try {
+                // First get a record to see the fields
+                const { response, data } = await callAirtableAPI(`/${encodeURIComponent(tableName)}?maxRecords=1`);
+
+                if (response.ok) {
+                    let schemaInfo = 'No records found to analyze schema';
+
+                    if (data.records && data.records.length > 0) {
+                        const fields = Object.keys(data.records[0].fields || {});
+                        schemaInfo = `Found fields:\n${fields.map(f => `• ${f}`).join('\n')}`;
+                    }
+
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<strong>✅ Table Schema Info:</strong>
+
+Table: ${tableName}
+
+${schemaInfo}
+
+Sample Record:
+${JSON.stringify(data.records[0] || {}, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>❌ Failed to get schema!</strong>
+
+Status: ${response.status}
+${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ Error!</strong>\n\n${error.message}`;
+            }
+        }
+
+        // Create a record directly
+        async function createDirectRecord() {
+            const resultDiv = document.getElementById('result');
+            const tableName = document.getElementById('tableName').value;
+            const fieldData = document.getElementById('fieldData').value;
+
+            resultDiv.textContent = 'Creating record...';
+
+            try {
+                const fields = JSON.parse(fieldData);
+
+                const requestBody = {
+                    fields: fields
+                };
+
+                console.log('Creating record with:', requestBody);
+
+                const { response, data } = await callAirtableAPI(
+                    `/${encodeURIComponent(tableName)}`,
+                    'POST',
+                    requestBody
+                );
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<strong>✅ Record Created Successfully!</strong>
+
+Record ID: ${data.id}
+Created Time: ${data.createdTime}
+
+Fields:
+${JSON.stringify(data.fields, null, 2)}
+
+Full Response:
+${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>❌ Failed to create record!</strong>
+
+Status: ${response.status}
+
+Error:
+${JSON.stringify(data, null, 2)}
+
+Common issues:
+1. Field names don't match table schema
+2. Field types are incorrect (e.g., sending string to number field)
+3. Required fields are missing
+4. Single Select fields have invalid options`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ Error!</strong>
+
+${error.message}
+
+Check:
+- JSON format is valid
+- Field names match exactly (case-sensitive)
+- Field types are correct`;
+            }
+        }
+
+        window.onload = () => {
+            console.log('Airtable Direct Test loaded');
+            console.log('Enter your Airtable credentials and test the connection');
+            console.log('Check browser console for detailed logs');
+        };
+    </script>
+</body>
+</html>
