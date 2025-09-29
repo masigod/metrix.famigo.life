@@ -18,6 +18,15 @@ Airtable_ManagementPanel_ID=ManagementPanel
 
 # SystemCredentials 테이블 ID (기본값: SystemCredentials)
 Airtable_SystemCredentials_ID=SystemCredentials
+
+# CredentialUsageLog 테이블 ID (기본값: CredentialUsageLog)
+Airtable_CredentialUsageLog_ID=CredentialUsageLog
+
+# CredentialAuditLog 테이블 ID (기본값: CredentialAuditLog)
+Airtable_CredentialAuditLog_ID=CredentialAuditLog
+
+# CredentialRequest 테이블 ID (기본값: CredentialRequest)
+Airtable_CredentialRequest_ID=CredentialRequest
 ```
 
 ## 📋 설정 방법
