@@ -1,0 +1,26 @@
+필드명,필드타입,설명,필수여부
+uid,Single line text,"Primary 필드, 고유 식별자",Yes
+name,Single line text,사용자 이름,Yes
+email,Single line text,이메일 주소,Yes
+phone,Phone number,전화번호,Yes
+gender,Single select,"성별 (Male, Female)",No
+birth_date,Date,생년월일,No
+nationality,Single line text,국적,No
+residence_area,Single line text,거주지역,No
+reservation_date,Date,예약일자,Yes
+reservation_time_slot,Single select,예약시간대 (09:00-10:00부터 20:00-21:00까지),Yes
+actual_reservation_time,Single line text,실제 예약시간,No
+reservation_location,Single select,"예약장소 (Seoul, Suwon)",Yes
+reservation_status,Single select,"예약상태 (Confirmed, Pending, Cancelled)",No
+participation_result,Single select,"참여결과 (participated, not_participated, pending, cancelled)",Yes
+participation_date,Date,참여일자,No
+participation_time,Single line text,참여시간,No
+confirmation_status,Single select,"확인상태 (confirmed, not_confirmed, pending)",No
+participation_notes,Long text,참여노트,No
+matching_key,Single line text,매칭키,No
+matching_type,Single select,"매칭타입 (exact, email, phone, none)",No
+matching_confidence,Number,매칭신뢰도,No
+data_source,Single select,"데이터출처 (Seoul, Suwon, 서울, 수원)",Yes
+sync_timestamp,Single line text,동기화시간,No
+processing_status,Single select,"처리상태 (imported, processed, verified, error)",No
+sync_date,Date,동기화날짜,No

@@ -7,8 +7,9 @@
 |--------------|-------------|---------|----------|
 | `Airtable_API_Key` | Airtable Personal Access Token or API Key | `patXXXXXXXXXXXXXX` | Yes |
 | `Airtable_Base_ID` | Airtable Base ID | `appXXXXXXXXXXXX` | Yes |
-| `Airtable_MetrixTable_ID` | Original Metrix Table ID | `tbldYyFJUCL6O73eA` | No |
-| `AIRTABLE_TABLE_NAME` | Management Panel Table Name | `ManagementPanel` | Yes |
+| `Airtable_ManagementPanel_ID` | Management Panel Table Name/ID | `ManagementPanel` | Yes |
+| `Airtable_MetrixTable_ID` | Original Metrix Table ID (legacy) | `tbldYyFJUCL6O73eA` | No |
+| `AIRTABLE_TABLE_NAME` | Alternative Table Name | `ManagementPanel` | No |
 
 ### Google Sheets Configuration (Optional)
 | Variable Name | Description | Example | Required |
@@ -34,6 +35,13 @@ Example:
 ```
 Key: Airtable_API_Key
 Value: patABCDEF123456789
+
+Key: Airtable_Base_ID
+Value: appXXXXXXXXXXXX
+
+Key: Airtable_ManagementPanel_ID
+Value: ManagementPanel
+
 Scopes: ☑ Production ☑ Deploy Previews ☐ Local development
 ```
 
@@ -47,10 +55,11 @@ AIRTABLE_API_KEY=patXXXXXXXXXXXXXX
 AIRTABLE_BASE_ID=appXXXXXXXXXXXX
 AIRTABLE_TABLE_NAME=ManagementPanel
 
-# Legacy naming (for backward compatibility)
+# Primary naming (Netlify)
 Airtable_API_Key=patXXXXXXXXXXXXXX
 Airtable_Base_ID=appXXXXXXXXXXXX
-Airtable_MetrixTable_ID=tbldYyFJUCL6O73eA
+Airtable_ManagementPanel_ID=ManagementPanel
+Airtable_MetrixTable_ID=tbldYyFJUCL6O73eA  # Legacy
 
 # Google Sheets (Optional)
 GOOGLE_SHEETS_ID=1qFgOUfID-6aB_yONfHNskNToMNn4xqU3lEQW8RaLhbY

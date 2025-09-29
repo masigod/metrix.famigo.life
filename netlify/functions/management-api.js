@@ -24,7 +24,7 @@ exports.handler = async (event, context) => {
   // Get environment variables
   const API_KEY = process.env.Airtable_API_Key;
   const BASE_ID = process.env.Airtable_Base_ID;
-  const TABLE_NAME = 'ManagementPanel';
+  const TABLE_NAME = process.env.Airtable_ManagementPanel_ID || 'ManagementPanel';
 
   if (!API_KEY || !BASE_ID) {
     return {

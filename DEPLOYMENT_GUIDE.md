@@ -44,7 +44,7 @@
    ```
    Airtable_API_Key = your_token_here
    Airtable_Base_ID = appXXXXXXXXXXXX
-   Airtable_MetrixTable_ID = ManagementPanel
+   Airtable_ManagementPanel_ID = ManagementPanel
    ```
 3. Deploy changes
 
@@ -172,7 +172,7 @@ netlify dev
    ```
    Airtable_API_Key = [your-token]
    Airtable_Base_ID = [your-base-id]
-   Airtable_MetrixTable_ID = ManagementPanel
+   Airtable_ManagementPanel_ID = ManagementPanel
    ```
 
 3. **Functions**:

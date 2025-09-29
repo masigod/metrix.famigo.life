@@ -141,7 +141,7 @@ Create a table named **"ManagementPanel"** with the following structure:
    ```
    Airtable_API_Key = your_token_here
    Airtable_Base_ID = appXXXXXXXXXXXX
-   Airtable_MetrixTable_ID = ManagementPanel
+   Airtable_ManagementPanel_ID = ManagementPanel
    ```
 
 ### For Local Development:
