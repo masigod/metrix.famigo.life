@@ -6,7 +6,16 @@
     <title>Management Panel - K-Beauty System</title>
 
     <!-- Tailwind CSS -->
+    <!-- Production Note: Using CDN for development. For production, use PostCSS or Tailwind CLI -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Suppress Tailwind CDN warning in console
+        tailwind.config = {
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
 
     <!-- Tabulator CSS & JS -->
     <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">

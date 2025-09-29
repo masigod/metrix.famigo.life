@@ -81,27 +81,40 @@ async function handleGet(apiKey, baseId, tableName, headers) {
 
   let allRecords = [];
   let offset = '';
+  let pageCount = 0;
+
+  console.log(`[Management API] Fetching from Airtable: ${baseId}/${tableName}`);
 
   try {
     // Fetch all records with pagination
     do {
+      pageCount++;
       const params = new URLSearchParams({
-        pageSize: '100',
-        view: 'Grid view'
+        pageSize: '100'
+        // Removed 'view' parameter as it might not exist
       });
 
       if (offset) {
         params.append('offset', offset);
       }
 
+      console.log(`[Management API] Fetching page ${pageCount}...`);
       const response = await fetch(`${url}?${params}`, {
         method: 'GET',
         headers: requestHeaders
       });
 
+      console.log(`[Management API] Response status: ${response.status}`);
       const data = await response.json();
 
-      if (data.records) {
+      if (!response.ok) {
+        console.error('[Management API] Airtable error:', data);
+        throw new Error(data.error?.message || 'Failed to fetch records');
+      }
+
+      console.log(`[Management API] Page ${pageCount} returned ${data.records ? data.records.length : 0} records`);
+
+      if (data.records && data.records.length > 0) {
         // Transform records
         const transformedRecords = data.records.map(record => ({
           id: record.id,
@@ -111,10 +124,13 @@ async function handleGet(apiKey, baseId, tableName, headers) {
           _created_time: record.createdTime
         }));
         allRecords = allRecords.concat(transformedRecords);
+        console.log(`[Management API] Total records so far: ${allRecords.length}`);
       }
 
       offset = data.offset || '';
     } while (offset);
+
+    console.log(`[Management API] Final total: ${allRecords.length} records`);
 
     // Add summary statistics
     const stats = calculateStatistics(allRecords);

@@ -468,6 +468,27 @@ async function loadData() {
             statistics: data.statistics || null
         });
 
+        // Enhanced logging for empty data
+        if (allData.length === 0) {
+            Logger.log('WARNING', 'No records found in Airtable', {
+                table: 'ManagementPanel',
+                possible_causes: [
+                    'Table is empty',
+                    'Table name mismatch',
+                    'Permission issues',
+                    'Environment variable misconfiguration'
+                ]
+            });
+
+            console.warn('⚠️ No records returned from Airtable');
+            console.warn('Please check:');
+            console.warn('1. Table "ManagementPanel" exists and has data');
+            console.warn('2. Environment variables are set correctly:');
+            console.warn('   - Airtable_API_Key');
+            console.warn('   - Airtable_Base_ID');
+            console.warn('   - Airtable_ManagementPanel_ID');
+        }
+
         SyncMonitor.updateStep('fetch', 'success',
             `Fetched ${allData.length} records`,
             `Time: ${fetchTime}ms, API: ${usedFallback ? 'Fallback' : 'Primary'}`);
@@ -508,7 +529,14 @@ async function loadData() {
         SyncMonitor.updateProgress(100);
         SyncMonitor.complete(true);
 
-        console.log(`Loaded ${allData.length} records`);
+        console.log(`✅ Loaded ${allData.length} records from Airtable`);
+
+        // Handle empty state UI
+        if (allData.length === 0) {
+            showEmptyState();
+        } else {
+            hideEmptyState();
+        }
 
     } catch (error) {
         Logger.log('ERROR', 'Failed to load data', {
@@ -788,6 +816,59 @@ function showLoading() {
 
 function hideLoading() {
     document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+// Show empty state message when no data is available
+function showEmptyState() {
+    const tableContainer = document.getElementById('dataTable');
+    const existingEmpty = document.getElementById('emptyStateMessage');
+
+    if (!existingEmpty && tableContainer) {
+        const emptyMessage = document.createElement('div');
+        emptyMessage.id = 'emptyStateMessage';
+        emptyMessage.className = 'text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300';
+        emptyMessage.innerHTML = `
+            <div class="text-gray-500">
+                <svg class="mx-auto h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                <h3 class="text-lg font-medium mb-2">No Data Available</h3>
+                <p class="text-sm mb-4">The Airtable table appears to be empty.</p>
+                <div class="text-left max-w-md mx-auto bg-white p-4 rounded border border-gray-200">
+                    <p class="text-xs font-semibold mb-2 text-gray-700">Troubleshooting:</p>
+                    <ul class="text-xs space-y-1 text-gray-600 mb-3">
+                        <li>• Verify table "ManagementPanel" exists in Airtable</li>
+                        <li>• Check if the table contains any records</li>
+                        <li>• Confirm environment variables are set correctly</li>
+                        <li>• Verify API key has read permissions</li>
+                    </ul>
+                    <p class="text-xs font-semibold mb-2 text-gray-700">Required Netlify environment variables:</p>
+                    <pre class="text-xs bg-gray-900 text-green-400 p-2 rounded overflow-x-auto">Airtable_API_Key=pat...
+Airtable_Base_ID=app...
+Airtable_ManagementPanel_ID=ManagementPanel</pre>
+                </div>
+                <button onclick="loadData()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium">
+                    🔄 Retry Loading Data
+                </button>
+            </div>
+        `;
+        tableContainer.parentElement.insertBefore(emptyMessage, tableContainer);
+        tableContainer.style.display = 'none';
+    }
+}
+
+// Hide empty state message when data is available
+function hideEmptyState() {
+    const emptyMessage = document.getElementById('emptyStateMessage');
+    const tableContainer = document.getElementById('dataTable');
+
+    if (emptyMessage) {
+        emptyMessage.remove();
+    }
+
+    if (tableContainer) {
+        tableContainer.style.display = 'block';
+    }
 }
 
 function showToast(message, type = 'info') {
