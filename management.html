@@ -287,7 +287,7 @@
         </div>
 
         <!-- Data Table -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div class="flex justify-between items-center mb-4">
                 <div>
                     <h2 class="text-lg font-semibold text-gray-900">Data Table</h2>
@@ -296,11 +296,114 @@
                         <span id="totalCount" class="font-medium">0</span> records
                     </p>
                 </div>
-                <div class="text-sm text-gray-500">
-                    <span id="selectedCount">0</span> selected
+                <div class="flex items-center gap-4">
+                    <div class="text-sm text-gray-500">
+                        <span id="selectedCount">0</span> selected
+                    </div>
+                    <button onclick="toggleDebugConsole()" class="text-sm bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700">
+                        <i class="fas fa-terminal mr-1"></i>Debug Console
+                    </button>
                 </div>
             </div>
             <div id="dataTable"></div>
+        </div>
+
+        <!-- Debug Console -->
+        <div id="debugConsole" class="bg-gray-900 text-green-400 rounded-lg shadow-lg p-4 mb-6 hidden">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="fas fa-terminal"></i>
+                    Debug Console
+                </h3>
+                <div class="flex gap-2">
+                    <button onclick="clearLogs()" class="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">
+                        Clear
+                    </button>
+                    <button onclick="downloadLogs()" class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">
+                        Download
+                    </button>
+                    <button onclick="toggleDebugConsole()" class="text-xs bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700">
+                        Close
+                    </button>
+                </div>
+            </div>
+            <div id="logContent" class="bg-black rounded p-3 h-64 overflow-y-auto font-mono text-xs">
+                <div class="text-yellow-400">[System] Debug console initialized...</div>
+            </div>
+        </div>
+
+        <!-- Sync Process Monitor -->
+        <div id="syncProcessMonitor" class="bg-white rounded-lg shadow-sm p-6 mb-6 hidden">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Sync Process Status</h3>
+            <div class="space-y-3">
+                <!-- Step 1: Fetching from Airtable -->
+                <div class="sync-step" id="step-fetch">
+                    <div class="flex items-center gap-3">
+                        <div class="step-icon w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                            <i class="fas fa-database text-gray-500"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-900">Fetching from Airtable</div>
+                            <div class="text-sm text-gray-500">Connecting to database...</div>
+                        </div>
+                        <div class="step-status">
+                            <span class="text-gray-400">Waiting</span>
+                        </div>
+                    </div>
+                    <div class="ml-11 mt-2 hidden" id="step-fetch-details">
+                        <div class="bg-gray-50 rounded p-2 text-xs text-gray-600"></div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Processing Data -->
+                <div class="sync-step" id="step-process">
+                    <div class="flex items-center gap-3">
+                        <div class="step-icon w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                            <i class="fas fa-cogs text-gray-500"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-900">Processing Data</div>
+                            <div class="text-sm text-gray-500">Normalizing and validating...</div>
+                        </div>
+                        <div class="step-status">
+                            <span class="text-gray-400">Waiting</span>
+                        </div>
+                    </div>
+                    <div class="ml-11 mt-2 hidden" id="step-process-details">
+                        <div class="bg-gray-50 rounded p-2 text-xs text-gray-600"></div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Updating UI -->
+                <div class="sync-step" id="step-update">
+                    <div class="flex items-center gap-3">
+                        <div class="step-icon w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                            <i class="fas fa-sync-alt text-gray-500"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-900">Updating Interface</div>
+                            <div class="text-sm text-gray-500">Rendering data...</div>
+                        </div>
+                        <div class="step-status">
+                            <span class="text-gray-400">Waiting</span>
+                        </div>
+                    </div>
+                    <div class="ml-11 mt-2 hidden" id="step-update-details">
+                        <div class="bg-gray-50 rounded p-2 text-xs text-gray-600"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mt-6">
+                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Progress</span>
+                    <span id="syncProgressPercent">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="syncProgressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
         </div>
     </main>
 

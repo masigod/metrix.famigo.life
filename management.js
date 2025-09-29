@@ -8,12 +8,191 @@ let filteredData = [];
 let currentLocation = 'all';
 let autoSyncInterval = null;
 let charts = {};
+let debugMode = false;
+let logs = [];
 
 // Configuration
 const CONFIG = {
     autoSyncIntervalMinutes: 15,
     cacheExpiryMinutes: 5,
-    maxRecordsDisplay: 10000
+    maxRecordsDisplay: 10000,
+    debugMode: true  // Enable debug by default for troubleshooting
+};
+
+// Logging System
+const Logger = {
+    logs: [],
+    maxLogs: 1000,
+
+    log: function(level, message, data = null) {
+        const timestamp = new Date().toISOString();
+        const logEntry = {
+            timestamp,
+            level,
+            message,
+            data
+        };
+
+        this.logs.push(logEntry);
+        if (this.logs.length > this.maxLogs) {
+            this.logs.shift();
+        }
+
+        // Console output
+        const consoleMsg = `[${timestamp.split('T')[1].split('.')[0]}] [${level}] ${message}`;
+        switch(level) {
+            case 'ERROR':
+                console.error(consoleMsg, data || '');
+                break;
+            case 'WARN':
+                console.warn(consoleMsg, data || '');
+                break;
+            case 'DEBUG':
+                if (CONFIG.debugMode) console.log(consoleMsg, data || '');
+                break;
+            default:
+                console.log(consoleMsg, data || '');
+        }
+
+        // Update UI console if visible
+        this.updateUIConsole(logEntry);
+    },
+
+    updateUIConsole: function(logEntry) {
+        const logContent = document.getElementById('logContent');
+        if (logContent) {
+            const colorMap = {
+                'ERROR': 'text-red-400',
+                'WARN': 'text-yellow-400',
+                'INFO': 'text-green-400',
+                'DEBUG': 'text-gray-400',
+                'SUCCESS': 'text-blue-400'
+            };
+
+            const logDiv = document.createElement('div');
+            logDiv.className = colorMap[logEntry.level] || 'text-gray-400';
+            logDiv.innerHTML = `[${logEntry.timestamp.split('T')[1].split('.')[0]}] [${logEntry.level}] ${logEntry.message}`;
+
+            if (logEntry.data) {
+                const dataDiv = document.createElement('div');
+                dataDiv.className = 'ml-4 text-gray-500 text-xs';
+                dataDiv.textContent = typeof logEntry.data === 'object' ?
+                    JSON.stringify(logEntry.data, null, 2) : logEntry.data;
+                logDiv.appendChild(dataDiv);
+            }
+
+            logContent.appendChild(logDiv);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+    },
+
+    clear: function() {
+        this.logs = [];
+        const logContent = document.getElementById('logContent');
+        if (logContent) {
+            logContent.innerHTML = '<div class="text-yellow-400">[System] Debug console cleared...</div>';
+        }
+    },
+
+    download: function() {
+        const dataStr = JSON.stringify(this.logs, null, 2);
+        const blob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `logs_${new Date().toISOString()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+};
+
+// Sync Process Monitor
+const SyncMonitor = {
+    steps: ['fetch', 'process', 'update'],
+    currentStep: null,
+    progress: 0,
+
+    start: function() {
+        Logger.log('INFO', 'Starting sync process...');
+        document.getElementById('syncProcessMonitor')?.classList.remove('hidden');
+        this.reset();
+    },
+
+    reset: function() {
+        this.steps.forEach(step => {
+            const stepEl = document.getElementById(`step-${step}`);
+            if (stepEl) {
+                stepEl.querySelector('.step-icon').className = 'step-icon w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center';
+                stepEl.querySelector('.step-icon i').className = stepEl.querySelector('.step-icon i').className.replace(/text-\w+-500/, 'text-gray-500');
+                stepEl.querySelector('.step-status span').textContent = 'Waiting';
+                stepEl.querySelector('.step-status span').className = 'text-gray-400';
+                document.getElementById(`step-${step}-details`)?.classList.add('hidden');
+            }
+        });
+        this.updateProgress(0);
+    },
+
+    updateStep: function(step, status, message = '', details = '') {
+        Logger.log('DEBUG', `Sync step: ${step} - ${status}`, {message, details});
+
+        const stepEl = document.getElementById(`step-${step}`);
+        if (stepEl) {
+            const statusEl = stepEl.querySelector('.step-status span');
+            const iconEl = stepEl.querySelector('.step-icon');
+            const iconClass = stepEl.querySelector('.step-icon i');
+
+            switch(status) {
+                case 'processing':
+                    iconEl.className = 'step-icon w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center animate-pulse';
+                    iconClass.className = iconClass.className.replace('text-gray-500', 'text-blue-500');
+                    statusEl.textContent = 'Processing...';
+                    statusEl.className = 'text-blue-500';
+                    break;
+                case 'success':
+                    iconEl.className = 'step-icon w-8 h-8 rounded-full bg-green-100 flex items-center justify-center';
+                    iconClass.className = iconClass.className.replace(/text-\w+-500/, 'text-green-500');
+                    statusEl.textContent = 'Complete';
+                    statusEl.className = 'text-green-500';
+                    break;
+                case 'error':
+                    iconEl.className = 'step-icon w-8 h-8 rounded-full bg-red-100 flex items-center justify-center';
+                    iconClass.className = iconClass.className.replace(/text-\w+-500/, 'text-red-500');
+                    statusEl.textContent = 'Error';
+                    statusEl.className = 'text-red-500';
+                    break;
+            }
+
+            if (message) {
+                stepEl.querySelector('.text-sm.text-gray-500').textContent = message;
+            }
+
+            if (details) {
+                const detailsEl = document.getElementById(`step-${step}-details`);
+                if (detailsEl) {
+                    detailsEl.classList.remove('hidden');
+                    detailsEl.querySelector('div').textContent = details;
+                }
+            }
+        }
+    },
+
+    updateProgress: function(percent) {
+        this.progress = percent;
+        const progressBar = document.getElementById('syncProgressBar');
+        const progressText = document.getElementById('syncProgressPercent');
+        if (progressBar) progressBar.style.width = `${percent}%`;
+        if (progressText) progressText.textContent = `${percent}%`;
+    },
+
+    complete: function(success = true) {
+        this.updateProgress(100);
+        Logger.log(success ? 'SUCCESS' : 'ERROR',
+            success ? 'Sync process completed successfully' : 'Sync process failed');
+
+        setTimeout(() => {
+            document.getElementById('syncProcessMonitor')?.classList.add('hidden');
+        }, 3000);
+    }
 };
 
 // Initialize on page load
@@ -23,30 +202,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initializeApp() {
     try {
+        Logger.log('INFO', 'Initializing Management Panel...');
         showLoading();
 
         // Initialize Tabulator table
+        Logger.log('DEBUG', 'Initializing data table...');
         initializeTable();
 
         // Initialize charts
+        Logger.log('DEBUG', 'Initializing charts...');
         initializeCharts();
 
         // Load initial data
+        Logger.log('INFO', 'Loading initial data from Airtable...');
         await loadData();
 
         // Set up event listeners
+        Logger.log('DEBUG', 'Setting up event listeners...');
         setupEventListeners();
 
         // Update UI
+        Logger.log('DEBUG', 'Updating statistics and sync status...');
         updateStatistics();
         updateSyncStatus();
 
         hideLoading();
 
         // Show welcome message
+        Logger.log('SUCCESS', 'Management Panel initialized successfully');
         showToast('Management Panel loaded successfully', 'success');
 
     } catch (error) {
+        Logger.log('ERROR', 'Initialization failed', error);
         console.error('Initialization error:', error);
         showToast('Failed to initialize panel', 'error');
         hideLoading();
@@ -228,44 +415,110 @@ function initializeCharts() {
 
 async function loadData() {
     try {
+        // Start sync monitor
+        SyncMonitor.start();
+
+        // Step 1: Fetching from Airtable
+        SyncMonitor.updateStep('fetch', 'processing', 'Connecting to Airtable...');
+        Logger.log('INFO', 'Fetching data from Airtable...');
+
+        const startTime = Date.now();
+
         // Fetch from Airtable via Netlify Function
+        Logger.log('DEBUG', 'Calling management-api endpoint...');
         const response = await fetch('/.netlify/functions/management-api', {
             method: 'GET'
         });
 
+        let data = null;
+        let usedFallback = false;
+
         if (!response.ok) {
+            Logger.log('WARN', `Primary API failed: ${response.status} ${response.statusText}`);
+
             // Fallback to existing airtable function
+            Logger.log('INFO', 'Trying fallback Airtable function...');
+            SyncMonitor.updateStep('fetch', 'processing', 'Using fallback API...');
+
             const fallbackResponse = await fetch('/.netlify/functions/airtable', {
                 method: 'GET'
             });
 
             if (!fallbackResponse.ok) {
-                throw new Error('Failed to fetch data');
+                Logger.log('ERROR', `Both APIs failed. Status: ${fallbackResponse.status}`);
+                SyncMonitor.updateStep('fetch', 'error', 'Failed to connect',
+                    `Primary: ${response.status}, Fallback: ${fallbackResponse.status}`);
+                throw new Error(`Failed to fetch data: ${fallbackResponse.status} ${fallbackResponse.statusText}`);
             }
 
-            const data = await fallbackResponse.json();
-            allData = data.records || [];
+            data = await fallbackResponse.json();
+            usedFallback = true;
+            Logger.log('SUCCESS', 'Data fetched using fallback API');
         } else {
-            const data = await response.json();
-            allData = data.records || [];
+            data = await response.json();
+            Logger.log('SUCCESS', 'Data fetched from primary API');
         }
+
+        const fetchTime = Date.now() - startTime;
+        allData = data.records || [];
+
+        Logger.log('INFO', `Fetched ${allData.length} records in ${fetchTime}ms`, {
+            api: usedFallback ? 'fallback' : 'primary',
+            recordCount: allData.length,
+            statistics: data.statistics || null
+        });
+
+        SyncMonitor.updateStep('fetch', 'success',
+            `Fetched ${allData.length} records`,
+            `Time: ${fetchTime}ms, API: ${usedFallback ? 'Fallback' : 'Primary'}`);
+        SyncMonitor.updateProgress(33);
+
+        // Step 2: Processing Data
+        SyncMonitor.updateStep('process', 'processing', 'Processing and filtering data...');
+        Logger.log('DEBUG', 'Processing data...');
 
         // Apply location filter
         filterByLocation();
 
+        Logger.log('INFO', `Filtered to ${filteredData.length} records for location: ${currentLocation}`);
+
+        SyncMonitor.updateStep('process', 'success',
+            `Processed ${filteredData.length} records`,
+            `Location: ${currentLocation}, Filtered from ${allData.length} total`);
+        SyncMonitor.updateProgress(66);
+
+        // Step 3: Updating UI
+        SyncMonitor.updateStep('update', 'processing', 'Updating interface...');
+        Logger.log('DEBUG', 'Updating UI components...');
+
         // Update table
         table.setData(filteredData);
+        Logger.log('DEBUG', 'Table updated with filtered data');
 
-        // Update UI
+        // Update UI components
         updateStatistics();
         updateCharts();
         updateSyncStatus();
 
+        Logger.log('SUCCESS', `Data load complete: ${allData.length} total, ${filteredData.length} displayed`);
+
+        SyncMonitor.updateStep('update', 'success',
+            'Interface updated successfully',
+            `Displaying ${filteredData.length} records`);
+        SyncMonitor.updateProgress(100);
+        SyncMonitor.complete(true);
+
         console.log(`Loaded ${allData.length} records`);
 
     } catch (error) {
+        Logger.log('ERROR', 'Failed to load data', {
+            error: error.message,
+            stack: error.stack
+        });
+
+        SyncMonitor.complete(false);
         console.error('Error loading data:', error);
-        showToast('Failed to load data', 'error');
+        showToast(`Failed to load data: ${error.message}`, 'error');
     }
 }
 
@@ -556,3 +809,107 @@ function showToast(message, type = 'info') {
         }
     }).showToast();
 }
+
+// Debug Console Functions
+function toggleDebugConsole() {
+    const console = document.getElementById('debugConsole');
+    if (console) {
+        console.classList.toggle('hidden');
+        if (!console.classList.contains('hidden')) {
+            Logger.log('DEBUG', 'Debug console opened');
+        }
+    }
+}
+
+function clearLogs() {
+    Logger.clear();
+}
+
+function downloadLogs() {
+    Logger.download();
+}
+
+// Manual Sync with enhanced logging
+async function manualSync() {
+    const syncBtn = document.getElementById('manualSyncBtn');
+    const syncStatus = document.getElementById('syncStatus');
+
+    try {
+        Logger.log('INFO', 'Manual sync initiated by user');
+
+        // Show sync status
+        syncStatus.classList.add('active');
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...';
+
+        // Start sync monitor
+        SyncMonitor.start();
+
+        // Trigger sync via API
+        Logger.log('DEBUG', 'Calling sync API...');
+        SyncMonitor.updateStep('fetch', 'processing', 'Initiating sync...');
+
+        const response = await fetch('/.netlify/functions/management-api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'sync' })
+        });
+
+        if (!response.ok) {
+            Logger.log('ERROR', `Sync API failed: ${response.status}`);
+            throw new Error(`Sync failed: ${response.status}`);
+        }
+
+        const result = await response.json();
+        Logger.log('SUCCESS', 'Sync triggered successfully', result);
+
+        // Reload data
+        await loadData();
+
+        showToast('Data synchronized successfully', 'success');
+
+    } catch (error) {
+        Logger.log('ERROR', 'Manual sync failed', {
+            error: error.message,
+            stack: error.stack
+        });
+        console.error('Sync error:', error);
+        showToast('Failed to sync data', 'error');
+        SyncMonitor.complete(false);
+
+    } finally {
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Manual Sync';
+        setTimeout(() => {
+            syncStatus.classList.remove('active');
+        }, 3000);
+    }
+}
+
+// Error boundary for initialization
+window.addEventListener('error', function(event) {
+    Logger.log('ERROR', 'Global error caught', {
+        message: event.message,
+        filename: event.filename,
+        line: event.lineno,
+        column: event.colno,
+        error: event.error
+    });
+});
+
+// Log unhandled promise rejections
+window.addEventListener('unhandledrejection', function(event) {
+    Logger.log('ERROR', 'Unhandled promise rejection', {
+        reason: event.reason,
+        promise: event.promise
+    });
+});
+
+// Initialize debug mode from URL parameter
+(function initDebugMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('debug') === 'true') {
+        CONFIG.debugMode = true;
+        Logger.log('INFO', 'Debug mode enabled via URL parameter');
+    }
+})();
