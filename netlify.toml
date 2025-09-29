@@ -2,6 +2,7 @@
 
 # Build settings
 [build]
+  command = "npm install"
   publish = "."
 
 # Headers for security and CORS

@@ -1,0 +1,29 @@
+{
+  "name": "k-beauty-management-panel",
+  "version": "1.0.0",
+  "description": "K-Beauty Management Panel with Google Sheets and Airtable Integration",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo 'No build step required'",
+    "dev": "netlify dev",
+    "deploy": "netlify deploy --prod"
+  },
+  "keywords": [
+    "k-beauty",
+    "management",
+    "airtable",
+    "google-sheets",
+    "netlify-functions"
+  ],
+  "author": "Dylan Kim",
+  "license": "MIT",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,7 +1,8 @@
 // Management Panel API - Netlify Function
 // Handles data sync between Google Sheets and Airtable
 
-const fetch = require('node-fetch');
+// Use native fetch (available in Node.js 18+)
+// No import needed as fetch is globally available
 
 exports.handler = async (event, context) => {
   // CORS headers
