@@ -1,0 +1,44 @@
+{
+  "name": "chrome-devtools-mcp",
+  "version": "1.0.0",
+  "description": "Chrome DevTools MCP Server for Claude Code Integration",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.1.0",
+    "chrome-remote-interface": "^0.31.3",
+    "puppeteer": "^21.0.0",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "mcp": {
+    "server": {
+      "command": "node",
+      "args": ["src/index.js"],
+      "transport": "stdio"
+    },
+    "tools": [
+      {
+        "name": "chrome_execute_js",
+        "description": "Execute JavaScript in Chrome DevTools"
+      },
+      {
+        "name": "chrome_inspect_dom",
+        "description": "Inspect and analyze DOM structure"
+      },
+      {
+        "name": "chrome_network_analysis",
+        "description": "Analyze network performance and requests"
+      },
+      {
+        "name": "chrome_performance_audit",
+        "description": "Run performance audits and get Core Web Vitals"
+      }
+    ]
+  }
+}

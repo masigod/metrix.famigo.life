@@ -87,21 +87,83 @@ exports.handler = async (event, context) => {
 async function createCredential(apiKey, baseId, tableName, data, headers) {
   const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
 
+  // Validate required fields
+  if (!data.service_name || !data.credential_type) {
+    console.error('Missing required fields:', { service_name: data.service_name, credential_type: data.credential_type });
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({
+        error: 'Missing required fields: service_name and credential_type are required'
+      })
+    };
+  }
+
+  // Parse and validate JSON fields
+  let parsedConfig = null;
+  if (data.additional_config) {
+    try {
+      // If it's already an object, stringify it; if string, validate it
+      if (typeof data.additional_config === 'string') {
+        parsedConfig = JSON.parse(data.additional_config); // Validate JSON
+        // Store as string for Long text field
+        data.additional_config = JSON.stringify(parsedConfig, null, 2);
+      } else if (typeof data.additional_config === 'object') {
+        data.additional_config = JSON.stringify(data.additional_config, null, 2);
+      }
+    } catch (e) {
+      console.error('Invalid JSON in additional_config:', e);
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          error: 'Invalid JSON format in additional_config field',
+          details: e.message
+        })
+      };
+    }
+  }
+
+  // Ensure boolean types are properly formatted
+  const is_active = data.is_active === true || data.is_active === 'true' || data.is_active === 1;
+
   // Add server-side encryption layer (optional)
   const encryptedData = {
-    ...data,
-    // Add server timestamp
-    created_at: new Date().toISOString(),
+    service_name: data.service_name,
+    credential_type: data.credential_type,
+    username: data.username || null,
+    password: data.password || null,
+    api_key: data.api_key || null,
+    refresh_token: data.refresh_token || null,
+    access_token: data.access_token || null,
+    token_expiry: data.token_expiry || null,
+    additional_config: data.additional_config || null,
+    is_active: is_active,
+    environment: data.environment || 'Production',
+    notes: data.notes || null,
+    created_by: data.created_by || null,
     // Hash sensitive data for additional security
     password_hash: data.password ? hashData(data.password) : null,
     api_key_hash: data.api_key ? hashData(data.api_key) : null
   };
+
+  // Log the data being sent (without sensitive info)
+  console.log('Creating credential with data:', {
+    service_name: encryptedData.service_name,
+    credential_type: encryptedData.credential_type,
+    environment: encryptedData.environment,
+    is_active: encryptedData.is_active,
+    has_password: !!encryptedData.password,
+    has_api_key: !!encryptedData.api_key,
+    has_additional_config: !!encryptedData.additional_config
+  });
 
   const requestBody = {
     fields: encryptedData
   };
 
   try {
+    console.log('Sending request to Airtable:', url);
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -114,14 +176,25 @@ async function createCredential(apiKey, baseId, tableName, data, headers) {
     const result = await response.json();
 
     if (!response.ok) {
+      console.error('Airtable API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: result.error,
+        type: result.error?.type,
+        message: result.error?.message
+      });
       return {
         statusCode: response.status,
         headers,
         body: JSON.stringify({
-          error: result.error?.message || 'Failed to create credential'
+          error: result.error?.message || 'Failed to create credential',
+          details: result.error?.type || 'Unknown error',
+          airtable_response: result
         })
       };
     }
+
+    console.log('Credential created successfully:', result.id);
 
     // Remove sensitive data from response
     const sanitizedResult = {

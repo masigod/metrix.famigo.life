@@ -1,0 +1,83 @@
+# ~/.config/claude-code/config.yaml
+# Claude Code + Chrome DevTools MCP 통합 설정
+
+mcp_servers:
+  # LazyCoder MCP (기존)
+  lazycoder:
+    command: "node"
+    args: ["./lazycoder-mcp/dist/index.js"]
+    transport: "stdio"
+    
+  # Chrome DevTools MCP (신규)
+  chrome-devtools:
+    command: "node"
+    args: ["./chrome-devtools-mcp/src/index.js"]
+    transport: "stdio"
+    env:
+      CHROME_PATH: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      CHROME_DEBUG_PORT: "9222"
+
+# Claude Code 워크플로우 설정
+workflows:
+  # 웹 개발 통합 워크플로우
+  web-dev-full-stack:
+    description: "완전한 웹 개발 파이프라인 (코드 → 테스트 → 브라우저 → 최적화)"
+    steps:
+      - mcp: "lazycoder"
+        tool: "agent_execute"
+        params:
+          agentName: "claude-code"
+          command: "generate component"
+      - mcp: "chrome-devtools" 
+        tool: "chrome_execute_js"
+        params:
+          code: "// 생성된 컴포넌트 테스트"
+      - mcp: "chrome-devtools"
+        tool: "chrome_performance_audit"
+      - mcp: "lazycoder"
+        tool: "agent_execute"
+        params:
+          agentName: "performance-optimizer"
+
+  # 디버깅 워크플로우  
+  debug-in-browser:
+    description: "실시간 브라우저 디버깅"
+    steps:
+      - mcp: "chrome-devtools"
+        tool: "chrome_inspect_dom"
+      - mcp: "chrome-devtools" 
+        tool: "chrome_network_analysis"
+      - mcp: "lazycoder"
+        tool: "agent_execute"
+        params:
+          agentName: "bug-hunter"
+
+# Claude Code 커스텀 명령어
+custom_commands:
+  # 브라우저 테스트 명령어
+  browser-test:
+    description: "코드를 생성하고 브라우저에서 즉시 테스트"
+    template: |
+      1. LazyCoder로 {component_type} 생성
+      2. Chrome DevTools로 실시간 테스트  
+      3. 성능 분석 및 최적화 제안
+      
+  # 풀스택 디버깅
+  fullstack-debug:
+    description: "프론트엔드와 백엔드를 동시에 디버깅"
+    template: |
+      1. 백엔드 API 분석 (LazyCoder)
+      2. 프론트엔드 DOM 검사 (Chrome DevTools)
+      3. 네트워크 통신 분석 (Chrome DevTools)
+      4. 통합 솔루션 제시 (LazyCoder)
+
+# 개발 환경 설정
+development:
+  auto_start_chrome: true
+  auto_open_devtools: true
+  performance_monitoring: true
+  
+  # Dylan님을 위한 특별 설정
+  philosophy_mode: true  # 철학적 분석 포함
+  fusion_approach: true  # 기술-비즈니스-창작 융합
+  global_perspective: true  # 글로벌 베스트 프랙티스 적용
